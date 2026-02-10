@@ -1,21 +1,26 @@
-# Лекція 10: Моніторинг та оптимізація
+# Лекція 10: DevOps, IaC та економіка хмари
 
 ## Огляд
 
-Ця лекція присвячена моніторингу хмарних систем та оптимізації їх продуктивності й вартості.
+Ця лекція об'єднує DevOps/DevSecOps практики, Infrastructure as Code та економічні аспекти хмарних технологій.
 
-## Теми
+## Теорія
 
-1. Системи моніторингу: метрики, логи, траси
-2. Observability: концепція та інструменти
-3. Performance tuning: методології
-4. Cost optimization: стратегії
-5. Capacity planning
-6. Приклади AWS: CloudWatch, X-Ray, Cost Explorer, Trusted Advisor
+- DevOps & DevSecOps
+- CI/CD pipelines (diagram)
+- Infrastructure as Code
+- Terraform — industry standard
+- FinOps basics
+
+## AWS-приклади
+
+- CloudWatch
+- Cost Explorer
+- Well-Architected Tool
 
 ## Тривалість
 
-90 хвилин
+2 години (90 хвилин)
 
 ## Матеріали
 
@@ -26,7 +31,8 @@
 ## Очікувані результати
 
 Після вивчення цієї лекції студенти зможуть:
-- Налаштовувати системи моніторингу
-- Аналізувати продуктивність систем
-- Оптимізувати витрати на хмарні ресурси
-- Планувати потужності для майбутнього зростання
+- Розуміти принципи DevOps та DevSecOps
+- Проектувати CI/CD pipelines
+- Застосовувати Infrastructure as Code підхід
+- Розуміти роль Terraform в індустрії
+- Оптимізувати витрати на хмарну інфраструктуру (FinOps)
