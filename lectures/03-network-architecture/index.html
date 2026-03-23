@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мережева архітектура хмар — Лекція 3</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --aws: #FF9900;
+      --aws-dark: #232F3E;
+      --blue: #0078d7;
+      --green: #00a550;
+      --red: #c0392b;
+      --bg: #1a1a2e;
+      --bg2: #16213e;
+      --card-bg: rgba(255,255,255,0.04);
+      --text: #e8e8e8;
+      --muted: #8899aa;
+      --mono: 'Courier New', monospace;
+    }
+
+    html { font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* ── Navigation ── */
+    #nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: var(--aws-dark);
+      border-bottom: 2px solid var(--aws);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px;
+      height: 52px;
+      z-index: 1000;
+    }
+    #nav .title { color: var(--aws); font-weight: 700; font-size: 1em; }
+    #nav .controls { display: flex; gap: 8px; align-items: center; }
+    #nav button {
+      background: var(--aws); color: var(--aws-dark);
+      border: none; border-radius: 4px;
+      padding: 6px 16px; font-weight: 700; font-size: 0.85em;
+      cursor: pointer;
+    }
+    #nav button:hover { background: #ffb84d; }
+    #nav button:disabled { opacity: 0.4; cursor: default; }
+    #slide-counter { color: var(--muted); font-size: 0.85em; }
+    #progress-bar {
+      position: fixed; top: 52px; left: 0;
+      height: 3px; background: var(--aws);
+      transition: width 0.3s; z-index: 1001;
+    }
+
+    /* ── Slide container ── */
+    #slides-wrap {
+      margin-top: 55px;
+      min-height: calc(100vh - 55px);
+    }
+    .slide {
+      display: none;
+      min-height: calc(100vh - 55px);
+      padding: 40px 60px;
+      animation: fadeIn 0.3s ease;
+    }
+    .slide.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* ── Typography ── */
+    h1 { font-size: 2.2em; color: var(--aws); margin-bottom: 0.3em; }
+    h2 { font-size: 1.6em; color: var(--aws); margin-bottom: 0.6em; }
+    h3 { font-size: 1.1em; color: #f0f0f0; margin-bottom: 0.4em; }
+    p  { color: #ccc; font-size: 0.95em; margin-bottom: 0.6em; }
+    code { font-family: var(--mono); background: #2a2a3e; border-radius: 3px; padding: 1px 6px; font-size: 0.88em; color: #e8c47a; }
+    a { color: var(--aws); }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 3px 12px;
+      font-weight: 700;
+      font-size: 0.72em;
+      margin-bottom: 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .badge-theory { background: #0078d7; color: #fff; }
+    .badge-aws    { background: var(--aws); color: var(--aws-dark); }
+
+    /* ── Cards grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--aws);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .card.blue { border-color: var(--blue); }
+    .card.green { border-color: var(--green); }
+    .card.red   { border-color: var(--red); }
+
+    .card h4 { font-size: 0.9em; margin-bottom: 8px; }
+    .card.default h4  { color: var(--aws); }
+    .card.blue h4 { color: #4db6ff; }
+    .card.green h4 { color: #44d382; }
+    .card.red h4   { color: #ff7070; }
+
+    .card ul { padding-left: 18px; font-size: 0.82em; color: #ccc; }
+    .card li { margin-bottom: 4px; }
+
+    /* ── Highlight box ── */
+    .highlight {
+      background: rgba(255, 153, 0, 0.1);
+      border-left: 4px solid var(--aws);
+      padding: 12px 16px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: #ddd;
+      margin-top: 16px;
+    }
+
+    /* ── Code / Diagram block ── */
+    .diagram {
+      font-family: var(--mono);
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 0.72em;
+      line-height: 1.65;
+      color: #c9d1d9;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+    th { background: var(--aws); color: var(--aws-dark); padding: 8px 12px; text-align: left; }
+    td { border: 1px solid #333; padding: 7px 12px; color: #ccc; }
+    tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+    td code { background: #1a1a2e; }
+
+    /* ── Tags ── */
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .tag {
+      background: #2d2d3e; border: 1px solid #444;
+      border-radius: 4px; padding: 4px 10px;
+      font-size: 0.78em; font-family: var(--mono); color: #ccc;
+    }
+
+    /* ── Tier boxes ── */
+    .tier-stack { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .tier-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 12px 20px;
+      text-align: center;
+      width: 100%;
+      font-size: 0.82em;
+    }
+    .tier-box.web   { border-color: var(--aws); }
+    .tier-box.app   { border-color: var(--blue); }
+    .tier-box.db    { border-color: var(--red); }
+    .tier-box strong { display: block; margin-bottom: 3px; }
+    .tier-arrow { color: #666; font-size: 1.2em; text-align: center; }
+
+    /* ── Agenda ── */
+    .agenda-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .agenda-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px;
+      background: var(--card-bg);
+      border-radius: 6px;
+    }
+    .agenda-num {
+      background: var(--aws); color: var(--aws-dark);
+      font-weight: 700; border-radius: 50%;
+      width: 28px; height: 28px; min-width: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8em;
+    }
+    .agenda-text strong { color: #f0f0f0; font-size: 0.9em; }
+    .agenda-text small  { color: var(--muted); font-size: 0.8em; }
+
+    /* ── Title slide ── */
+    .title-slide {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      min-height: calc(100vh - 55px);
+    }
+    .title-slide h1 { font-size: 2.6em; }
+    .title-slide .sub { color: #888; font-size: 1em; margin: 6px 0 20px; }
+    hr.aws-hr { border: none; border-top: 2px solid var(--aws); width: 120px; margin: 16px auto; }
+
+    /* ── QA slide ── */
+    .qa-slide {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: calc(100vh - 55px);
+      text-align: center;
+    }
+    .qa-icon { font-size: 4em; margin-bottom: 12px; }
+
+    /* Keyboard hint */
+    .key-hint {
+      position: fixed; bottom: 16px; right: 16px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 6px; padding: 6px 12px;
+      font-size: 0.72em; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav id="nav">
+  <span class="title">🌐 Мережева архітектура хмар</span>
+  <div class="controls">
+    <button id="prev-btn" onclick="changeSlide(-1)">← Назад</button>
+    <span id="slide-counter">1 / 23</span>
+    <button id="next-btn" onclick="changeSlide(1)">Далі →</button>
+  </div>
+</nav>
+<div id="progress-bar"></div>
+
+<div id="slides-wrap">
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 1 — TITLE                         -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide active">
+    <div class="title-slide">
+      <h1>🌐 Мережева архітектура хмар</h1>
+      <p class="sub">Лекція 3 &nbsp;·&nbsp; 2 години</p>
+      <hr class="aws-hr">
+      <p style="color:#aaa; font-size:0.9em;">VPC · CIDR · Subnets · Routing · NAT · Bastion Host · Multi-tier Patterns</p>
+      <div class="tags" style="justify-content:center; margin-top:24px;">
+        <span class="tag">☁️ AWS</span>
+        <span class="tag">🔒 VPC</span>
+        <span class="tag">🔀 Routing</span>
+        <span class="tag">🛡 Security</span>
+        <span class="tag">🏗 Architecture</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 2 — AGENDA                        -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <h2>📋 План лекції</h2>
+    <div class="agenda-grid" style="margin-top:20px;">
+      <div class="agenda-item">
+        <div class="agenda-num">1</div>
+        <div class="agenda-text"><strong>VPC</strong><br><small>Логічна ізоляція мережі</small></div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-num">2</div>
+        <div class="agenda-text"><strong>CIDR / IP-адресація</strong><br><small>Підмережі, маски</small></div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-num">3</div>
+        <div class="agenda-text"><strong>Public vs Private Subnet</strong><br><small>Доступ до інтернету</small></div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-num">4</div>
+        <div class="agenda-text"><strong>Routing &amp; NAT</strong><br><small>Таблиці маршрутизації</small></div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-num">5</div>
+        <div class="agenda-text"><strong>Ingress / Egress</strong><br><small>Трафік всередину і назовні</small></div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-num">6</div>
+        <div class="agenda-text"><strong>Bastion Host</strong><br><small>Безпечний доступ до приватних ресурсів</small></div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-num">7</div>
+        <div class="agenda-text"><strong>2-tier / 3-tier Patterns</strong><br><small>Архітектурні шаблони</small></div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-num">8</div>
+        <div class="agenda-text"><strong>AWS приклади</strong><br><small>VPC, Route Tables, IGW, NAT GW</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 3 — VPC OVERVIEW                  -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>🏠 VPC — Virtual Private Cloud</h2>
+    <p>Логічно ізольована секція хмарної інфраструктури, де ви повністю контролюєте свою мережу.</p>
+    <div class="grid-2" style="margin-top:16px;">
+      <div class="card default">
+        <h4>🔐 Що забезпечує VPC</h4>
+        <ul>
+          <li>Власний діапазон IP-адрес (CIDR)</li>
+          <li>Ізоляція від інших клієнтів хмари</li>
+          <li>Повний контроль маршрутизації</li>
+          <li>Власні правила міжмережевих екранів</li>
+          <li>Вибір зон доступності (AZ)</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h4>⚙️ Складові VPC</h4>
+        <ul>
+          <li>Subnets (підмережі)</li>
+          <li>Route Tables (таблиці маршрутів)</li>
+          <li>Internet Gateway (IGW)</li>
+          <li>NAT Gateway</li>
+          <li>Security Groups &amp; NACLs</li>
+          <li>VPN / Direct Connect</li>
+        </ul>
+      </div>
+    </div>
+    <div class="highlight">
+      💡 Кожен обліковий запис AWS може мати до <strong>5 VPC</strong> у кожному регіоні
+      (ліміт можна збільшити). За замовчуванням існує <strong>Default VPC</strong> у кожному регіоні.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 4 — VPC DIAGRAM                   -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>VPC — Логічна ізоляція мережі</h2>
+    <div class="diagram">
+┌─────────────────────────────────────────────────────────────┐
+│                        AWS Cloud                            │
+│                                                             │
+│   ┌─────────────────────────────────────────────────────┐   │
+│   │               VPC  10.0.0.0/16                      │   │
+│   │                                                     │   │
+│   │  ┌──────────────────────┐   ┌────────────────────┐  │   │
+│   │  │   Public Subnet      │   │   Private Subnet   │  │   │
+│   │  │   10.0.1.0/24        │   │   10.0.2.0/24      │  │   │
+│   │  │                      │   │                    │  │   │
+│   │  │  [  Web Server   ]   │   │  [  DB Server  ]   │  │   │
+│   │  │  [  Load Balancer]   │   │  [  App Server ]   │  │   │
+│   │  └──────────────────────┘   └────────────────────┘  │   │
+│   └─────────────────────────────────────────────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+    </div>
+    <div class="highlight">
+      🔑 VPC не дорівнює фізичному дата-центру. Це <strong>програмна абстракція</strong>,
+      яка визначає мережеві межі та правила. Ресурси різних клієнтів можуть бути
+      на тому самому залізі, але вони <strong>повністю ізольовані</strong> одне від одного.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 5 — CIDR                          -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>🔢 CIDR та IP-адресація</h2>
+    <p><strong>CIDR</strong> (Classless Inter-Domain Routing) — метод позначення IP-діапазонів у форматі <code>A.B.C.D/prefix</code></p>
+    <div class="grid-2" style="margin-top:16px;">
+      <div>
+        <table>
+          <thead><tr><th>CIDR</th><th>Маска</th><th>Хостів</th></tr></thead>
+          <tbody>
+            <tr><td><code>/8</code></td><td>255.0.0.0</td><td>16 777 214</td></tr>
+            <tr><td><code>/16</code></td><td>255.255.0.0</td><td>65 534</td></tr>
+            <tr><td><code>/24</code></td><td>255.255.255.0</td><td>254</td></tr>
+            <tr><td><code>/28</code></td><td>255.255.255.240</td><td>14</td></tr>
+            <tr><td><code>/32</code></td><td>255.255.255.255</td><td>1 (host)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="card default" style="margin-bottom:12px;">
+          <h4>🏗 Приватні діапазони (RFC 1918)</h4>
+          <ul>
+            <li><code>10.0.0.0/8</code></li>
+            <li><code>172.16.0.0/12</code></li>
+            <li><code>192.168.0.0/16</code></li>
+          </ul>
+        </div>
+        <div class="highlight" style="margin-top:0;">
+          Для VPC AWS рекомендує <code>/16</code> — це дає 65 536 IP-адрес,
+          які можна розподілити між підмережами
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 6 — CIDR SUBNETTING               -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>Розбивка CIDR на підмережі</h2>
+    <div class="diagram">
+VPC:  10.0.0.0/16  →  65 536 адрес
+
+├── Public Subnet  AZ-a   10.0.1.0/24    →  256 адрес
+├── Public Subnet  AZ-b   10.0.2.0/24    →  256 адрес
+├── Private Subnet AZ-a   10.0.10.0/24   →  256 адрес
+├── Private Subnet AZ-b   10.0.11.0/24   →  256 адрес
+└── DB Subnet      AZ-a   10.0.20.0/24   →  256 адрес
+
+⚠️  AWS резервує 5 адрес у кожній підмережі:
+    .0   — Network address
+    .1   — VPC router
+    .2   — DNS resolver
+    .3   — Future use
+    .255 — Broadcast (не підтримується, зарезервовано)
+
+→  Підмережа /24 матиме 251 використовувану адресу (256 − 5)
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 7 — PUBLIC vs PRIVATE SUBNET      -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>🌍 Public vs Private Subnet</h2>
+    <div class="grid-2" style="margin-top:16px;">
+      <div class="card green">
+        <h4>✅ Public Subnet</h4>
+        <ul>
+          <li>Є маршрут до Internet Gateway</li>
+          <li>EC2 може отримати Public IP або EIP</li>
+          <li>Доступна з Інтернету (при правильних SG)</li>
+          <li><strong>Використовується для:</strong><br>Load Balancer, Bastion Host, NAT Gateway</li>
+        </ul>
+      </div>
+      <div class="card red">
+        <h4>🔒 Private Subnet</h4>
+        <ul>
+          <li>Немає прямого маршруту до Інтернету</li>
+          <li>Вихід через NAT Gateway (за потреби)</li>
+          <li>Не доступна безпосередньо з Інтернету</li>
+          <li><strong>Використовується для:</strong><br>App Server, Database, Lambda</li>
+        </ul>
+      </div>
+    </div>
+    <div class="highlight">
+      🔑 Ключова різниця: наявність маршруту <code>0.0.0.0/0 → IGW</code>
+      у таблиці маршрутизації підмережі. Без цього маршруту — підмережа приватна.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 8 — RESOURCE PLACEMENT DIAGRAM    -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>Приклад розміщення ресурсів</h2>
+    <div class="diagram">
+           Internet
+               │
+               ▼
+┌──────────────────────────────────────────────────────┐
+│                  VPC 10.0.0.0/16                     │
+│                                                      │
+│  ┌───────────────────────────────────────────────┐   │
+│  │  Public Subnet  10.0.1.0/24                   │   │
+│  │  [ALB / ELB]  [Bastion Host]  [NAT Gateway]  │   │
+│  └───────────────────────┬───────────────────────┘   │
+│                          │                            │
+│  ┌───────────────────────▼───────────────────────┐   │
+│  │  Private Subnet  10.0.10.0/24                 │   │
+│  │  [App Server]    [Worker Service]             │   │
+│  └───────────────────────┬───────────────────────┘   │
+│                          │                            │
+│  ┌───────────────────────▼───────────────────────┐   │
+│  │  DB Subnet  10.0.20.0/24                      │   │
+│  │  [RDS Primary]      [RDS Standby Replica]     │   │
+│  └───────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────┘
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 9 — ROUTE TABLES                  -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>🔀 Routing — Таблиці маршрутизації</h2>
+    <p>Кожна підмережа асоціюється з <strong>Route Table</strong>. Маршрут визначає: куди відправити пакет для заданого діапазону IP.</p>
+    <div class="grid-2" style="margin-top:16px;">
+      <div>
+        <h3 style="color:#44d382; margin-bottom:8px;">Public Route Table</h3>
+        <table>
+          <thead><tr><th>Destination</th><th>Target</th></tr></thead>
+          <tbody>
+            <tr><td><code>10.0.0.0/16</code></td><td>local</td></tr>
+            <tr><td><code>0.0.0.0/0</code></td><td style="color:#44d382;"><code>igw-xxxxxxxx</code></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.8em; color:#888; margin-top:6px;">↑ Другий рядок дозволяє вихід в Інтернет</p>
+      </div>
+      <div>
+        <h3 style="color:#ff7070; margin-bottom:8px;">Private Route Table</h3>
+        <table>
+          <thead><tr><th>Destination</th><th>Target</th></tr></thead>
+          <tbody>
+            <tr><td><code>10.0.0.0/16</code></td><td>local</td></tr>
+            <tr><td><code>0.0.0.0/0</code></td><td style="color:var(--aws);"><code>nat-xxxxxxxx</code></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.8em; color:#888; margin-top:6px;">↑ Вихід через NAT Gateway (без вхідного доступу)</p>
+      </div>
+    </div>
+    <div class="highlight">
+      📌 Правило <code>local</code> завжди присутнє і не може бути видалене —
+      воно забезпечує зв'язок всередині VPC між усіма підмережами.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 10 — NAT                          -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>🔄 NAT — Network Address Translation</h2>
+    <div class="grid-2">
+      <div class="card default">
+        <h4>NAT Gateway (керований AWS)</h4>
+        <ul>
+          <li>Розміщується у <strong>Public Subnet</strong></li>
+          <li>Потребує Elastic IP (EIP)</li>
+          <li>Масштабується автоматично</li>
+          <li>Висока доступність у межах AZ</li>
+          <li>Платний: ~$0.045/год + трафік</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h4>NAT Instance (самокерована)</h4>
+        <ul>
+          <li>EC2 інстанс з IP forwarding</li>
+          <li>Потрібно вимкнути перевірку src/dst</li>
+          <li>Масштабування вручну</li>
+          <li>Дешевше, але більше операційних зусиль</li>
+          <li><em>Застарілий підхід</em></li>
+        </ul>
+      </div>
+    </div>
+    <div class="diagram" style="margin-top:16px;">
+Private EC2 [10.0.10.5] → NAT GW [EIP: 52.1.2.3] → Internet
+                               ↑
+                     Замінює src IP на EIP
+                     Відповідь повертається назад до EC2
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 11 — INGRESS / EGRESS             -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>↕️ Ingress &amp; Egress</h2>
+    <div class="grid-2" style="margin-top:16px;">
+      <div class="card default">
+        <h4>⬇️ Ingress (вхідний трафік)</h4>
+        <ul>
+          <li>Трафік, що <strong>надходить</strong> до ресурсу</li>
+          <li>Контролюється Security Groups (Inbound Rules)</li>
+          <li>Контролюється NACL (Inbound Rules)</li>
+          <li>Приклад: HTTP/HTTPS від клієнтів</li>
+          <li>Приклад: SSH від адміністратора</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h4>⬆️ Egress (вихідний трафік)</h4>
+        <ul>
+          <li>Трафік, що <strong>виходить</strong> від ресурсу</li>
+          <li>Контролюється Security Groups (Outbound Rules)</li>
+          <li>Контролюється NACL (Outbound Rules)</li>
+          <li>Приклад: запити до зовнішніх API</li>
+          <li>Приклад: завантаження оновлень через NAT</li>
+        </ul>
+      </div>
+    </div>
+    <div class="highlight">
+      💰 <strong>Вартість трафіку AWS:</strong> Ingress (вхідний) трафік — безкоштовний.
+      Egress (вихідний) трафік за межі AWS — платний (~$0.09/GB для перших 10 TB).
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 12 — SG vs NACL                   -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>Security Groups vs Network ACL</h2>
+    <table style="margin-top:16px;">
+      <thead>
+        <tr>
+          <th>Характеристика</th>
+          <th>Security Group</th>
+          <th>Network ACL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Рівень</td><td>Instance (ENI)</td><td>Subnet</td></tr>
+        <tr><td>Stateful / Stateless</td><td>✅ Stateful</td><td>❌ Stateless</td></tr>
+        <tr><td>Правила</td><td>Тільки Allow</td><td>Allow &amp; Deny</td></tr>
+        <tr><td>Порядок обробки</td><td>Всі правила одночасно</td><td>За номером (від меншого)</td></tr>
+        <tr><td>Зворотній трафік</td><td>Автоматично дозволений</td><td>Потрібне явне правило</td></tr>
+        <tr><td>За замовчуванням</td><td>Весь вхідний — заблокований</td><td>Весь трафік — дозволений</td></tr>
+      </tbody>
+    </table>
+    <div class="highlight">
+      🔐 Перший рубіж — NACL (subnet level), другий — Security Group (instance level).
+      Пакет повинен пройти <strong>обидва</strong> перевірки.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 13 — BASTION HOST                 -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>🏰 Bastion Host (Jump Box)</h2>
+    <p>Захищений сервер у <strong>Public Subnet</strong>, що є єдиною точкою входу для адміністрування ресурсів у Private Subnet.</p>
+    <div class="diagram" style="margin-top:14px;">
+Administrator
+     │  SSH (port 22) від IP адміністратора
+     ▼
+┌──────────────────────────────────────────────────┐
+│  Public Subnet                                   │
+│                                                  │
+│  ┌────────────────────────────────────────────┐  │
+│  │  Bastion Host  (EC2 t3.micro)              │  │
+│  │  Public IP: 52.1.2.3                       │  │
+│  │  SG Inbound: Allow SSH from admin-IP/32    │  │
+│  └───────────────────┬────────────────────────┘  │
+└──────────────────────┼───────────────────────────┘
+                       │  SSH (port 22) via Private IP
+                       ▼
+┌──────────────────────────────────────────────────┐
+│  Private Subnet                                  │
+│                                                  │
+│  [ App Server ]  [ DB Server ]  [ Worker ]       │
+│  SG Inbound: Allow SSH only from Bastion SG      │
+└──────────────────────────────────────────────────┘
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 14 — BASTION BEST PRACTICES       -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>Bastion Host — Найкращі практики</h2>
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card default">
+        <h4>🔒 Безпека</h4>
+        <ul>
+          <li>Обмежити SSH тільки до вашого IP <code>/32</code></li>
+          <li>Використовувати SSH ключі (без паролів)</li>
+          <li>MFA для входу</li>
+          <li>Мінімальні права IAM</li>
+          <li>Регулярне оновлення ОС</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h4>📊 Моніторинг</h4>
+        <ul>
+          <li>Логування всіх сесій</li>
+          <li>CloudWatch Logs</li>
+          <li>Алерти про підозрілі входи</li>
+          <li>AWS CloudTrail</li>
+          <li>VPC Flow Logs</li>
+        </ul>
+      </div>
+      <div class="card default">
+        <h4>🔄 Альтернативи</h4>
+        <ul>
+          <li><strong>AWS SSM Session Manager</strong></li>
+          <li>AWS VPN</li>
+          <li>AWS Direct Connect</li>
+          <li>EC2 Instance Connect</li>
+        </ul>
+      </div>
+    </div>
+    <div class="highlight">
+      💡 <strong>AWS Systems Manager Session Manager</strong> — сучасна альтернатива
+      Bastion Host. Не потребує відкритих портів SSH, базується на IAM для авторизації.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 15 — 2-tier vs 3-tier             -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>🏗 Архітектурні шаблони</h2>
+    <div class="grid-2" style="margin-top:20px;">
+      <div>
+        <h3 style="color:var(--aws); margin-bottom:12px; text-align:center;">2-Tier Architecture</h3>
+        <div class="tier-stack">
+          <div class="tier-box web">
+            <strong>Tier 1: Presentation</strong>
+            Web Server (Public Subnet)<br>
+            <small style="color:#888;">Static files, reverse proxy</small>
+          </div>
+          <div class="tier-arrow">↕</div>
+          <div class="tier-box db">
+            <strong>Tier 2: Data</strong>
+            Database (Private Subnet)<br>
+            <small style="color:#888;">RDS, DynamoDB</small>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 style="color:var(--aws); margin-bottom:12px; text-align:center;">3-Tier Architecture</h3>
+        <div class="tier-stack">
+          <div class="tier-box web">
+            <strong>Tier 1: Presentation</strong>
+            Web / Load Balancer (Public)
+          </div>
+          <div class="tier-arrow">↕</div>
+          <div class="tier-box app">
+            <strong>Tier 2: Application</strong>
+            Business Logic (Private)
+          </div>
+          <div class="tier-arrow">↕</div>
+          <div class="tier-box db">
+            <strong>Tier 3: Data</strong>
+            Database (Private / DB Subnet)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 16 — 3-TIER FULL DIAGRAM          -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>3-Tier у AWS: повна схема</h2>
+    <div class="diagram" style="font-size:0.65em;">
+Internet
+   │
+   ▼
+Internet Gateway (IGW)
+   │
+   ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  Public Subnet (10.0.1.0/24)                                    │
+│  [Application Load Balancer] ← HTTPS :443                       │
+│  [Bastion Host]  [NAT Gateway + EIP]                            │
+└────────────────────────┬────────────────────────────────────────┘
+                         │  HTTP :8080
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  Private Subnet — App Tier (10.0.10.0/24)                       │
+│  [EC2 Auto Scaling Group / ECS Cluster]  ← Business logic, APIs │
+└────────────────────────┬────────────────────────────────────────┘
+                         │  TCP :5432
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  DB Subnet (10.0.20.0/24)                                       │
+│  [RDS Multi-AZ Primary]  ←→  [RDS Standby Replica]             │
+└─────────────────────────────────────────────────────────────────┘
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 17 — PATTERN COMPARISON           -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-theory">Теорія</span>
+    <h2>Порівняння архітектурних шаблонів</h2>
+    <table style="margin-top:20px;">
+      <thead>
+        <tr><th>Критерій</th><th>2-Tier</th><th>3-Tier</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Складність</td><td>🟢 Просто</td><td>🟡 Середня</td></tr>
+        <tr><td>Масштабованість</td><td>🟡 Обмежена</td><td>🟢 Висока (незалежна)</td></tr>
+        <tr><td>Безпека</td><td>🟡 Базова</td><td>🟢 Краща ізоляція рівнів</td></tr>
+        <tr><td>Вартість</td><td>🟢 Нижча</td><td>🟡 Вища</td></tr>
+        <tr><td>Відмовостійкість</td><td>🟡 Середня</td><td>🟢 Висока (HA per tier)</td></tr>
+        <tr><td>Підходить для</td><td>MVP, прості застосунки</td><td>Production, enterprise</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 18 — AWS VPC CREATION             -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-aws">☁️ AWS</span>
+    <h2>Amazon VPC — Створення</h2>
+    <div class="grid-2">
+      <div class="card default">
+        <h4>🖥 AWS Console</h4>
+        <ul>
+          <li>VPC → Your VPCs → <strong>Create VPC</strong></li>
+          <li>IPv4 CIDR: <code>10.0.0.0/16</code></li>
+          <li>Tenancy: Default (або Dedicated)</li>
+          <li>DNS hostnames: ✅ Enable</li>
+          <li>DNS resolution: ✅ Enable</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h4>🔧 AWS CLI</h4>
+        <ul style="font-family:monospace; font-size:0.8em; list-style:none; padding-left:0;">
+          <li><code>aws ec2 create-vpc \</code></li>
+          <li><code>&nbsp; --cidr-block 10.0.0.0/16 \</code></li>
+          <li><code>&nbsp; --tag-specifications \</code></li>
+          <li><code>&nbsp; 'ResourceType=vpc,</code></li>
+          <li><code>&nbsp;  Tags=[{Key=Name,</code></li>
+          <li><code>&nbsp;        Value=my-vpc}]'</code></li>
+        </ul>
+      </div>
+    </div>
+    <div class="highlight">
+      🗺 Рекомендація: розгортайте підмережі у <strong>мінімум 2 Availability Zones</strong>
+      для забезпечення High Availability. AWS має щонайменше 2 AZ у кожному регіоні.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 19 — SUBNETS IN AWS               -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-aws">☁️ AWS</span>
+    <h2>Subnets у AWS</h2>
+    <div class="diagram">
+# Створити Public Subnet
+aws ec2 create-subnet \
+  --vpc-id vpc-0123456789abcdef0 \
+  --cidr-block 10.0.1.0/24 \
+  --availability-zone us-east-1a \
+  --tag-specifications \
+  'ResourceType=subnet,Tags=[{Key=Name,Value=public-subnet-1a}]'
+
+# Ввімкнути auto-assign Public IP для Public Subnet
+aws ec2 modify-subnet-attribute \
+  --subnet-id subnet-xxxxxxxxxx \
+  --map-public-ip-on-launch
+
+# Створити Private Subnet
+aws ec2 create-subnet \
+  --vpc-id vpc-0123456789abcdef0 \
+  --cidr-block 10.0.10.0/24 \
+  --availability-zone us-east-1a \
+  --tag-specifications \
+  'ResourceType=subnet,Tags=[{Key=Name,Value=private-subnet-1a}]'
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 20 — IGW + ROUTE TABLES IN AWS    -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-aws">☁️ AWS</span>
+    <h2>IGW та Route Tables у AWS</h2>
+    <div class="diagram">
+# 1. Створити і прикріпити Internet Gateway
+aws ec2 create-internet-gateway \
+  --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=my-igw}]'
+
+aws ec2 attach-internet-gateway \
+  --internet-gateway-id igw-xxxxxxxxxx \
+  --vpc-id vpc-0123456789abcdef0
+
+# 2. Створити Public Route Table і додати маршрут до IGW
+aws ec2 create-route-table \
+  --vpc-id vpc-0123456789abcdef0 \
+  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=public-rt}]'
+
+aws ec2 create-route \
+  --route-table-id rtb-xxxxxxxxxx \
+  --destination-cidr-block 0.0.0.0/0 \
+  --gateway-id igw-xxxxxxxxxx
+
+# 3. Асоціювати Route Table з Public Subnet
+aws ec2 associate-route-table \
+  --route-table-id rtb-xxxxxxxxxx \
+  --subnet-id subnet-public-xx
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 21 — NAT GATEWAY IN AWS           -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-aws">☁️ AWS</span>
+    <h2>NAT Gateway у AWS</h2>
+    <div class="grid-2">
+      <div class="card default">
+        <h4>📋 Типи NAT Gateway</h4>
+        <ul>
+          <li><strong>Public NAT GW</strong> — для виходу в Інтернет</li>
+          <li><strong>Private NAT GW</strong> — для зв'язку між VPC через Transit Gateway</li>
+        </ul>
+        <br>
+        <h4>💰 Вартість</h4>
+        <ul>
+          <li>~$0.045/год за кожен NAT GW</li>
+          <li>~$0.045/GB обробленого трафіку</li>
+          <li>Один NAT GW на AZ (для HA)</li>
+        </ul>
+      </div>
+      <div>
+        <div class="diagram" style="font-size:0.62em;">
+# Виділити Elastic IP
+aws ec2 allocate-address --domain vpc
+
+# Створити NAT Gateway
+aws ec2 create-nat-gateway \
+  --subnet-id subnet-public-xx \
+  --allocation-id eipalloc-xx \
+  --tag-specifications \
+  'ResourceType=natgateway,
+   Tags=[{Key=Name,Value=nat-gw-1a}]'
+
+# Додати маршрут у Private Route Table
+aws ec2 create-route \
+  --route-table-id rtb-private-xx \
+  --destination-cidr-block 0.0.0.0/0 \
+  --nat-gateway-id nat-xxxxxxxx
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 22 — FULL AWS ARCHITECTURE        -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="badge badge-aws">☁️ AWS</span>
+    <h2>Повна мережева архітектура AWS VPC</h2>
+    <div class="diagram" style="font-size:0.6em;">
+                        INTERNET
+                            │
+                     ┌──────┴──────┐
+                     │    IGW      │  ← Internet Gateway (безкоштовний)
+                     └──────┬──────┘
+                            │
+┌───────────────────────────┼───────────────────────────────────────┐
+│  VPC: 10.0.0.0/16         │                                       │
+│                           │                                       │
+│  ┌────────────────────────▼──────────────────────────────────┐   │
+│  │  Public Subnet (AZ-a: 10.0.1.0/24)                        │   │
+│  │  Route: 0.0.0.0/0 → igw-xxx                               │   │
+│  │  [ALB]  [Bastion Host]  [NAT Gateway + EIP: 52.x.x.x]    │   │
+│  └───────────┬──────────────────────────┬─────────────────────┘   │
+│              │ :8080 (ALB→App)          │ :22 (Admin→Bastion)     │
+│  ┌───────────▼──────────────────────┐  │                          │
+│  │  Private Subnet (10.0.10.0/24)   │  │                          │
+│  │  Route: 0.0.0.0/0 → nat-xxx      │  │                          │
+│  │  [EC2 App Servers]               │◄─┘                          │
+│  └───────────┬──────────────────────┘                             │
+│              │ :5432 (App→DB)                                     │
+│  ┌───────────▼──────────────────────┐                             │
+│  │  DB Subnet (10.0.20.0/24)        │                             │
+│  │  No route to Internet            │                             │
+│  │  [RDS Multi-AZ]                  │                             │
+│  └──────────────────────────────────┘                             │
+└───────────────────────────────────────────────────────────────────┘
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 23 — SUMMARY                      -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <h2>📚 Підсумок лекції</h2>
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card default">
+        <h4>🔐 Ізоляція</h4>
+        <ul>
+          <li>VPC = логічна мережа</li>
+          <li>CIDR задає IP-простір</li>
+          <li>Subnet ділить мережу на зони</li>
+          <li>Public / Private / DB subnets</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h4>🔀 Зв'язність</h4>
+        <ul>
+          <li>Route Table — правила трафіку</li>
+          <li>IGW — вхід/вихід в Інтернет</li>
+          <li>NAT GW — вихід для Private</li>
+          <li>VPC Peering — між VPC</li>
+        </ul>
+      </div>
+      <div class="card default">
+        <h4>🛡 Безпека</h4>
+        <ul>
+          <li>SG — stateful, instance level</li>
+          <li>NACL — stateless, subnet level</li>
+          <li>Bastion — єдина точка входу</li>
+          <li>SSM Session Manager — альтернатива</li>
+        </ul>
+      </div>
+    </div>
+    <div class="highlight">
+      🏗 <strong>Ключовий патерн:</strong> Public subnet → IGW для зовнішнього доступу,
+      Private subnet → NAT GW для одностороннього виходу,
+      Bastion Host (або SSM) для адміністрування.
+      3-tier архітектура — стандарт для production середовищ.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SLIDE 24 — Q&A                          -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="qa-slide">
+      <div class="qa-icon">❓</div>
+      <h2>Запитання?</h2>
+      <p style="color:#888; margin-top:20px; font-size:0.9em;">📖 Документація AWS:</p>
+      <p><code>https://docs.aws.amazon.com/vpc/latest/userguide/</code></p>
+      <p style="color:#888; margin-top:16px; font-size:0.9em;">🔧 Практика — AWS Free Tier:</p>
+      <p style="font-size:0.85em; color:#aaa;">VPC, EC2, RDS — перші 12 місяців безкоштовно</p>
+      <div class="tags" style="justify-content:center; margin-top:24px;">
+        <span class="tag">VPC</span>
+        <span class="tag">Subnets</span>
+        <span class="tag">Route Tables</span>
+        <span class="tag">IGW</span>
+        <span class="tag">NAT Gateway</span>
+        <span class="tag">Bastion Host</span>
+        <span class="tag">2-tier / 3-tier</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /slides-wrap -->
+
+<div class="key-hint">← → або кнопки для навігації</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+  const total = slides.length;
+
+  function updateSlide() {
+    slides.forEach((s, i) => s.classList.toggle('active', i === current));
+    document.getElementById('slide-counter').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('prev-btn').disabled = current === 0;
+    document.getElementById('next-btn').disabled = current === total - 1;
+    const pct = ((current + 1) / total * 100).toFixed(1);
+    document.getElementById('progress-bar').style.width = pct + '%';
+  }
+
+  function changeSlide(dir) {
+    const next = current + dir;
+    if (next >= 0 && next < total) {
+      current = next;
+      updateSlide();
+      window.scrollTo(0, 0);
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      changeSlide(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      changeSlide(-1);
+    } else if (e.key === 'Home') {
+      current = 0;
+      updateSlide();
+    } else if (e.key === 'End') {
+      current = total - 1;
+      updateSlide();
+    }
+  });
+
+  updateSlide();
+</script>
+</body>
+</html>
