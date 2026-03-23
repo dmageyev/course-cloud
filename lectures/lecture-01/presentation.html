@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лекція 1: Хмарні обчислення як архітектурна парадигма</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .presentation {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .slide {
+            background: white;
+            width: 90vw;
+            max-width: 1200px;
+            height: 85vh;
+            max-height: 700px;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px 80px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #764ba2;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin: 25px 0 15px 0;
+        }
+
+        h4 {
+            color: #764ba2;
+            font-size: 1.4em;
+            margin: 20px 0 10px 0;
+        }
+
+        p {
+            font-size: 1.2em;
+            line-height: 1.8;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        ul, ol {
+            margin-left: 40px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            font-size: 1.2em;
+            line-height: 1.8;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.3em;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-size: 1em;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 1em;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .emoji {
+            font-size: 1.2em;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        blockquote {
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+            margin: 20px 0;
+            font-style: italic;
+            color: #555;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            color: #667eea;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #667eea;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 5px;
+            background: #667eea;
+            transition: width 0.3s;
+            z-index: 1000;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        strong {
+            color: #667eea;
+        }
+
+        .checkmark {
+            color: #28a745;
+        }
+
+        .cross {
+            color: #dc3545;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .slide {
+                padding: 40px 30px;
+                width: 95vw;
+                height: 90vh;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.8em;
+            }
+
+            h3 {
+                font-size: 1.4em;
+            }
+
+            p, li {
+                font-size: 1em;
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                bottom: 15px;
+                gap: 10px;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .slide {
+                display: block !important;
+                page-break-after: always;
+                box-shadow: none;
+                border: 1px solid #ddd;
+                margin-bottom: 20px;
+                width: 100%;
+                max-width: none;
+                height: auto;
+            }
+
+            .controls, .slide-counter, .progress-bar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="slide-counter" id="slideCounter">1 / 50</div>
+    
+    <div class="presentation">
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <h1>Лекція 1: Хмарні обчислення як архітектурна парадигма</h1>
+            <p class="subtitle"><strong>Курс:</strong> Cloud Computing</p>
+            <p class="subtitle"><strong>Рівень:</strong> Бакалаври 3 курс, ІТ напрямок</p>
+            <p class="subtitle"><strong>Тривалість:</strong> 90 хвилин</p>
+        </div>
+
+        <!-- Slide 2: Overview -->
+        <div class="slide">
+            <h2>Огляд лекції</h2>
+            <ul>
+                <li>Еволюція ІТ-інфраструктури</li>
+                <li>Визначення Cloud Computing (NIST)</li>
+                <li>Моделі обслуговування: IaaS / PaaS / SaaS</li>
+                <li>Моделі розгортання: Public / Private / Hybrid / Multi-cloud</li>
+                <li>Cloud ≠ AWS: Vendor-Agnostic підхід</li>
+                <li>API-First та Automation-First принципи</li>
+                <li>AWS як приклад реалізації</li>
+            </ul>
+        </div>
+
+        <!-- Slide 3: Section Header - Evolution -->
+        <div class="slide center">
+            <h1>1. Еволюція ІТ-інфраструктури</h1>
+        </div>
+
+        <!-- Slide 4: Mainframe Era -->
+        <div class="slide">
+            <h2>Mainframe Era (1960-1980-ті)</h2>
+            <h3>Централізовані обчислення</h3>
+            <ul>
+                <li>🖥️ Величезні комп'ютери (кімнатного розміру)</li>
+                <li>💰 Надзвичайно висока вартість</li>
+                <li>🔒 Обмежений доступ</li>
+                <li>📊 Термінали без власної потужності</li>
+                <li>⏱️ Пакетна обробка даних</li>
+            </ul>
+            <p><strong>Проблеми:</strong> Висока вартість, складність масштабування, централізація</p>
+        </div>
+
+        <!-- Slide 5: Client-Server Era -->
+        <div class="slide">
+            <h2>Client-Server Era (1980-2000-ні)</h2>
+            <h3>Розподілені обчислення</h3>
+            <ul>
+                <li>💻 Персональні комп'ютери + сервери</li>
+                <li>🌐 Локальні мережі (LAN)</li>
+                <li>🏢 Власні дата-центри</li>
+                <li>📈 Більша гнучкість</li>
+                <li>💵 Нижча вартість входу</li>
+            </ul>
+            <p><strong>Проблеми:</strong> Утримання інфраструктури, капітальні витрати, складність масштабування</p>
+        </div>
+
+        <!-- Slide 6: Virtualization -->
+        <div class="slide">
+            <h2>Віртуалізація (2000-ні)</h2>
+            <h3>Революція в ефективності</h3>
+            <ul>
+                <li>🔄 VMware, Xen, KVM</li>
+                <li>📦 Множинні ОС на одному сервері</li>
+                <li>🎯 Ефективніше використання ресурсів</li>
+                <li>🔐 Ізоляція робочих навантажень</li>
+                <li>🌱 Основа для хмарних обчислень</li>
+            </ul>
+            <p><strong>Результат:</strong> Можливість динамічного виділення ресурсів</p>
+        </div>
+
+        <!-- Slide 7: Traditional Challenges -->
+        <div class="slide">
+            <h2>Виклики традиційного підходу</h2>
+            <div class="two-column">
+                <div>
+                    <h3>Капітальні витрати (CapEx)</h3>
+                    <ul>
+                        <li>💰 Велика початкова інвестиція</li>
+                        <li>📉 Амортизація обладнання</li>
+                        <li>⚠️ Ризик застарівання</li>
+                    </ul>
+                    <h3>Масштабування</h3>
+                    <ul>
+                        <li>⏳ Тривалий час закупівлі</li>
+                        <li>🔮 Складність прогнозування</li>
+                        <li>⚖️ Надлишкові потужності</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Утримання</h3>
+                    <ul>
+                        <li>👥 Необхідність персоналу</li>
+                        <li>🔒 Фізична безпека</li>
+                        <li>⚡ Електроживлення, охолодження</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Section - Cloud Definition -->
+        <div class="slide center">
+            <h1>2. Cloud Computing: Визначення NIST</h1>
+        </div>
+
+        <!-- Slide 9: NIST Definition -->
+        <div class="slide">
+            <h2>Офіційне визначення</h2>
+            <blockquote>
+                <strong>Cloud computing</strong> is a model for enabling ubiquitous, convenient, <strong>on-demand network access</strong> to a <strong>shared pool of configurable computing resources</strong> that can be <strong>rapidly provisioned and released</strong> with minimal management effort.
+            </blockquote>
+            <p class="center"><strong>— National Institute of Standards and Technology (NIST)</strong></p>
+        </div>
+
+        <!-- Slide 10: 5 Characteristics -->
+        <div class="slide">
+            <h2>П'ять основних характеристик</h2>
+            <ol>
+                <li><strong>On-demand self-service</strong> (Самообслуговування)</li>
+                <li><strong>Broad network access</strong> (Широкий мережевий доступ)</li>
+                <li><strong>Resource pooling</strong> (Об'єднання ресурсів)</li>
+                <li><strong>Rapid elasticity</strong> (Швидка еластичність)</li>
+                <li><strong>Measured service</strong> (Вимірюваність)</li>
+            </ol>
+            <p class="center" style="margin-top: 30px;"><strong>Усі п'ять обов'язкові для "справжньої" хмари!</strong></p>
+        </div>
+
+        <!-- Slide 11: Self-Service -->
+        <div class="slide">
+            <h2>1. On-demand Self-Service</h2>
+            <h3>Самообслуговування на вимогу</h3>
+            <ul>
+                <li>🖱️ Користувач сам отримує ресурси</li>
+                <li>🤖 Автоматизація через веб-портал або API</li>
+                <li>⚡ Без взаємодії з персоналом провайдера</li>
+                <li>🚀 Миттєвий старт</li>
+            </ul>
+            <p><strong>Приклад AWS:</strong> Запуск EC2 instance за 2 хвилини через консоль або за секунди через CLI</p>
+            <pre><code>aws ec2 run-instances --image-id ami-xxx --instance-type t2.micro</code></pre>
+        </div>
+
+        <!-- Slide 12: Broad Network Access -->
+        <div class="slide">
+            <h2>2. Broad Network Access</h2>
+            <h3>Широкий мережевий доступ</h3>
+            <ul>
+                <li>🌐 Доступ через стандартні протоколи (HTTP/HTTPS)</li>
+                <li>📱 З різних пристроїв (ноутбук, телефон, планшет)</li>
+                <li>🔓 Через інтернет або приватні мережі</li>
+                <li>🌍 Звідки завгодно</li>
+            </ul>
+            <p><strong>Приклад:</strong> Доступ до AWS Console з браузера, мобільного додатку, CLI</p>
+        </div>
+
+        <!-- Slide 13: Resource Pooling -->
+        <div class="slide">
+            <h2>3. Resource Pooling</h2>
+            <h3>Об'єднання ресурсів</h3>
+            <ul>
+                <li>👥 Мультитенантність (multi-tenancy)</li>
+                <li>🔄 Динамічне призначення ресурсів</li>
+                <li>🗺️ Абстрагування від фізичного розташування</li>
+                <li>📊 Ефективне використання</li>
+            </ul>
+            <p><strong>Концепція:</strong> Ваша EC2 instance працює на спільному обладнанні з іншими, але ви цього не помічаєте</p>
+        </div>
+
+        <!-- Slide 14: Rapid Elasticity -->
+        <div class="slide">
+            <h2>4. Rapid Elasticity</h2>
+            <h3>Швидка еластичність</h3>
+            <ul>
+                <li>📈 Масштабування вгору (scale up)</li>
+                <li>📉 Масштабування вниз (scale down)</li>
+                <li>🤖 Автоматичне або ручне</li>
+                <li>⚡ За лічені хвилини</li>
+            </ul>
+            <p><strong>Приклад AWS:</strong> Auto Scaling Groups автоматично додають EC2 instances при високому навантаженні</p>
+            <pre><code>Низьке навантаження: 2 instances
+Високе навантаження: 20 instances
+Повернення до норми: 2 instances</code></pre>
+        </div>
+
+        <!-- Slide 15: Measured Service -->
+        <div class="slide">
+            <h2>5. Measured Service</h2>
+            <h3>Вимірюваність сервісу</h3>
+            <ul>
+                <li>📊 Моніторинг використання ресурсів</li>
+                <li>💵 Оплата за фактичне використання (pay-as-you-go)</li>
+                <li>📈 Прозорість витрат</li>
+                <li>🔍 Детальна аналітика</li>
+            </ul>
+            <p><strong>Приклад AWS:</strong></p>
+            <ul>
+                <li>CloudWatch metrics для моніторингу</li>
+                <li>Cost Explorer для аналізу витрат</li>
+                <li>Billing dashboard з розбивкою по сервісах</li>
+            </ul>
+        </div>
+
+        <!-- Slide 16: Section - Service Models -->
+        <div class="slide center">
+            <h1>3. Моделі обслуговування</h1>
+            <h2>IaaS / PaaS / SaaS</h2>
+        </div>
+
+        <!-- Slide 17: Service Models Pyramid -->
+        <div class="slide">
+            <h2>Піраміда моделей обслуговування</h2>
+            <pre><code>        +------------------+
+        |   SaaS           |  Додатки як сервіс
+        +------------------+
+        |   PaaS           |  Платформа як сервіс
+        +------------------+
+        |   IaaS           |  Інфраструктура як сервіс
+        +------------------+
+        | On-Premises      |  Власна інфраструктура
+        +------------------+
+
+      Менше контролю ↑      ↑ Менше управління
+      Більше контролю ↓     ↓ Більше управління</code></pre>
+        </div>
+
+        <!-- Slide 18: IaaS -->
+        <div class="slide">
+            <h2>IaaS: Infrastructure as a Service</h2>
+            <p><strong>Що це:</strong> Оренда віртуалізованих обчислювальних ресурсів</p>
+            <div class="two-column">
+                <div>
+                    <h3>Що надається:</h3>
+                    <ul>
+                        <li>☁️ Віртуальні машини</li>
+                        <li>💾 Сховища даних</li>
+                        <li>🌐 Мережа</li>
+                        <li>🖥️ ОС (на вибір)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Ваша відповідальність:</h3>
+                    <ul>
+                        <li>⚙️ ОС та патчі</li>
+                        <li>📦 Middleware, runtime</li>
+                        <li>💻 Додатки та дані</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 19: IaaS Examples -->
+        <div class="slide">
+            <h2>IaaS: Приклади та використання</h2>
+            <h3>Приклади:</h3>
+            <ul>
+                <li><strong>AWS:</strong> EC2, S3, VPC</li>
+                <li><strong>Azure:</strong> Virtual Machines, Blob Storage</li>
+                <li><strong>GCP:</strong> Compute Engine, Cloud Storage</li>
+            </ul>
+            <h3>Коли використовувати:</h3>
+            <ul>
+                <li class="checkmark">✅ Потрібен повний контроль над ОС</li>
+                <li class="checkmark">✅ Міграція legacy додатків</li>
+                <li class="checkmark">✅ Специфічні вимоги до конфігурації</li>
+            </ul>
+            <p><strong>Переваги:</strong> Максимальна гнучкість | <strong>Недоліки:</strong> Більше управління</p>
+        </div>
+
+        <!-- Slide 20: PaaS -->
+        <div class="slide">
+            <h2>PaaS: Platform as a Service</h2>
+            <p><strong>Що це:</strong> Платформа для розробки та розгортання додатків</p>
+            <div class="two-column">
+                <div>
+                    <h3>Що надається:</h3>
+                    <ul>
+                        <li>🔧 Runtime середовище</li>
+                        <li>📚 Middleware</li>
+                        <li>🗄️ Бази даних</li>
+                        <li>🛠️ Інструменти розробки</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Ваша відповідальність:</h3>
+                    <ul>
+                        <li>💻 Код додатку</li>
+                        <li>⚙️ Конфігурація</li>
+                        <li>📊 Дані</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 21: PaaS Examples -->
+        <div class="slide">
+            <h2>PaaS: Приклади та використання</h2>
+            <h3>Приклади:</h3>
+            <ul>
+                <li><strong>AWS:</strong> Elastic Beanstalk, Lambda, RDS</li>
+                <li><strong>Azure:</strong> App Service, Azure Functions</li>
+                <li><strong>GCP:</strong> App Engine, Cloud Functions</li>
+                <li><strong>Інше:</strong> Heroku, Cloud Foundry</li>
+            </ul>
+            <h3>Коли використовувати:</h3>
+            <ul>
+                <li class="checkmark">✅ Фокус на коді, не на інфраструктурі</li>
+                <li class="checkmark">✅ Потрібне швидке розгортання</li>
+                <li class="checkmark">✅ Автоматичне масштабування</li>
+            </ul>
+        </div>
+
+        <!-- Slide 22: SaaS -->
+        <div class="slide">
+            <h2>SaaS: Software as a Service</h2>
+            <p><strong>Що це:</strong> Готові додатки через інтернет</p>
+            <div class="two-column">
+                <div>
+                    <h3>Що надається:</h3>
+                    <ul>
+                        <li>📱 Повністю готовий додаток</li>
+                        <li>🖥️ Інтерфейс користувача</li>
+                        <li>🔒 Безпека та оновлення</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Ваша відповідальність:</h3>
+                    <ul>
+                        <li>👤 Використання</li>
+                        <li>📄 Ваші дані</li>
+                        <li>⚙️ Конфігурація (обмежена)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 23: SaaS Examples -->
+        <div class="slide">
+            <h2>SaaS: Приклади</h2>
+            <h3>Популярні SaaS додатки:</h3>
+            <ul>
+                <li>📧 <strong>Email:</strong> Gmail, Outlook.com</li>
+                <li>💼 <strong>Productivity:</strong> Microsoft 365, Google Workspace</li>
+                <li>💰 <strong>CRM:</strong> Salesforce, HubSpot</li>
+                <li>💬 <strong>Communication:</strong> Slack, Zoom, Teams</li>
+                <li>📁 <strong>Storage:</strong> Dropbox, Google Drive</li>
+            </ul>
+            <p><strong>Переваги:</strong> Немає управління інфраструктурою<br>
+            <strong>Недоліки:</strong> Мінімальна кастомізація</p>
+        </div>
+
+        <!-- Slide 24: Responsibility Comparison -->
+        <div class="slide">
+            <h2>Порівняння відповідальності</h2>
+            <table>
+                <tr>
+                    <th>Компонент</th>
+                    <th>On-Prem</th>
+                    <th>IaaS</th>
+                    <th>PaaS</th>
+                    <th>SaaS</th>
+                </tr>
+                <tr>
+                    <td>Додатки</td>
+                    <td>👤 Ви</td>
+                    <td>👤 Ви</td>
+                    <td>👤 Ви</td>
+                    <td>☁️ Провайдер</td>
+                </tr>
+                <tr>
+                    <td>Дані</td>
+                    <td>👤 Ви</td>
+                    <td>👤 Ви</td>
+                    <td>👤 Ви</td>
+                    <td>☁️ Провайдер</td>
+                </tr>
+                <tr>
+                    <td>Runtime</td>
+                    <td>👤 Ви</td>
+                    <td>👤 Ви</td>
+                    <td>☁️ Провайдер</td>
+                    <td>☁️ Провайдер</td>
+                </tr>
+                <tr>
+                    <td>ОС</td>
+                    <td>👤 Ви</td>
+                    <td>👤 Ви</td>
+                    <td>☁️ Провайдер</td>
+                    <td>☁️ Провайдер</td>
+                </tr>
+                <tr>
+                    <td>Інфраструктура</td>
+                    <td>👤 Ви</td>
+                    <td>☁️ Провайдер</td>
+                    <td>☁️ Провайдер</td>
+                    <td>☁️ Провайдер</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Slide 25: Section - Deployment Models -->
+        <div class="slide center">
+            <h1>4. Моделі розгортання</h1>
+        </div>
+
+        <!-- Slide 26: Cloud Types -->
+        <div class="slide">
+            <h2>Типи хмар</h2>
+            <pre><code>┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│   Public    │  │   Private   │  │   Hybrid    │  │ Multi-Cloud │
+│    Cloud    │  │    Cloud    │  │    Cloud    │  │             │
+└─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘
+     AWS              On-Prem       AWS + On-Prem   AWS + Azure
+     Azure            VMware        Azure + On-Prem     + GCP
+     GCP              OpenStack</code></pre>
+        </div>
+
+        <!-- Slide 27: Public Cloud -->
+        <div class="slide">
+            <h2>Public Cloud (Публічна хмара)</h2>
+            <p><strong>Що це:</strong> Хмара доступна для загального користування</p>
+            <h3>Характеристики:</h3>
+            <ul>
+                <li>🌐 Спільна інфраструктура (multi-tenancy)</li>
+                <li>💵 Оплата за використання</li>
+                <li>🚀 Немає початкових інвестицій</li>
+            </ul>
+            <p><strong>Приклади:</strong> AWS, Azure, GCP, DigitalOcean</p>
+            <p><strong class="checkmark">Переваги:</strong> Низькі витрати, швидке масштабування<br>
+            <strong class="cross">Недоліки:</strong> Менший контроль, regulatory concerns</p>
+        </div>
+
+        <!-- Slide 28: Private Cloud -->
+        <div class="slide">
+            <h2>Private Cloud (Приватна хмара)</h2>
+            <p><strong>Що це:</strong> Виділена інфраструктура для однієї організації</p>
+            <h3>Характеристики:</h3>
+            <ul>
+                <li>🔒 Виділена інфраструктура</li>
+                <li>🏢 On-premises або hosted</li>
+                <li>👥 Повний контроль</li>
+            </ul>
+            <p><strong>Приклади:</strong> VMware vCloud, OpenStack, AWS Outposts</p>
+            <p><strong class="checkmark">Переваги:</strong> Повний контроль, compliance<br>
+            <strong class="cross">Недоліки:</strong> Високі витрати, потреба в персоналі</p>
+        </div>
+
+        <!-- Slide 29: Hybrid Cloud -->
+        <div class="slide">
+            <h2>Hybrid Cloud (Гібридна хмара)</h2>
+            <p><strong>Що це:</strong> Комбінація приватної та публічної хмар</p>
+            <h3>Характеристики:</h3>
+            <ul>
+                <li>🔄 Дані переміщуються між хмарами</li>
+                <li>🎯 Єдине управління</li>
+                <li>⚖️ Гнучкість розміщення</li>
+            </ul>
+            <h3>Use Cases:</h3>
+            <ul>
+                <li>💾 Sensitive data → Private</li>
+                <li>🌐 Public apps → Public</li>
+                <li>📈 Burst to cloud (CloudBursting)</li>
+            </ul>
+        </div>
+
+        <!-- Slide 30: Multi-Cloud -->
+        <div class="slide">
+            <h2>Multi-Cloud (Мультихмара)</h2>
+            <p><strong>Що це:</strong> Використання сервісів від кількох провайдерів</p>
+            <h3>Характеристики:</h3>
+            <ul>
+                <li>☁️☁️☁️ AWS + Azure + GCP одночасно</li>
+                <li>🔓 Уникнення vendor lock-in</li>
+                <li>🎯 Best-of-breed підхід</li>
+            </ul>
+            <h3>Стратегії:</h3>
+            <ul>
+                <li>📦 Distributed: різні додатки</li>
+                <li>🔄 Redundant: дублювання</li>
+                <li>🎯 Specialized: унікальні сервіси</li>
+            </ul>
+        </div>
+
+        <!-- Slide 31: Deployment Comparison -->
+        <div class="slide">
+            <h2>Порівняння моделей розгортання</h2>
+            <table>
+                <tr>
+                    <th></th>
+                    <th>Public</th>
+                    <th>Private</th>
+                    <th>Hybrid</th>
+                    <th>Multi-Cloud</th>
+                </tr>
+                <tr>
+                    <td><strong>Контроль</strong></td>
+                    <td>Низький</td>
+                    <td>Високий</td>
+                    <td>Середній</td>
+                    <td>Середній</td>
+                </tr>
+                <tr>
+                    <td><strong>Вартість</strong></td>
+                    <td>Низька</td>
+                    <td>Висока</td>
+                    <td>Середня</td>
+                    <td>Висока</td>
+                </tr>
+                <tr>
+                    <td><strong>Складність</strong></td>
+                    <td>Низька</td>
+                    <td>Середня</td>
+                    <td>Висока</td>
+                    <td>Найвища</td>
+                </tr>
+                <tr>
+                    <td><strong>Гнучкість</strong></td>
+                    <td>Висока</td>
+                    <td>Середня</td>
+                    <td>Висока</td>
+                    <td>Найвища</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Slide 32: Section - Cloud != AWS -->
+        <div class="slide center">
+            <h1>5. Cloud ≠ AWS</h1>
+            <h2>Vendor-Agnostic підхід</h2>
+        </div>
+
+        <!-- Slide 33: Common Mistake -->
+        <div class="slide center">
+            <h2>Поширена помилка</h2>
+            <p class="cross" style="font-size: 2em; margin: 30px 0;">❌ "Cloud" = "AWS"</p>
+            <p class="checkmark" style="font-size: 2em; margin: 30px 0;">✅ Cloud = Архітектурна парадигма<br>AWS = Один з багатьох провайдерів</p>
+            <p style="font-size: 1.5em; margin-top: 40px;"><strong>Це як сказати: "Автомобіль = Tesla"</strong></p>
+        </div>
+
+        <!-- Slide 34: Why it Matters -->
+        <div class="slide">
+            <h2>Чому це важливо?</h2>
+            <h3>1. Технологічна грамотність</h3>
+            <ul>
+                <li>📚 Розуміння концепцій vs. реалізацій</li>
+                <li>🔄 Portable знання</li>
+            </ul>
+            <h3>2. Архітектурне мислення</h3>
+            <ul>
+                <li>🏗️ Vendor-agnostic дизайн</li>
+                <li>🔓 Уникнення lock-in</li>
+            </ul>
+            <h3>3. Кар'єрна гнучкість</h3>
+            <ul>
+                <li>💼 Робота з різними платформами</li>
+                <li>📈 Адаптивність до ринку</li>
+            </ul>
+        </div>
+
+        <!-- Slide 35: Cloud Providers -->
+        <div class="slide">
+            <h2>Основні хмарні провайдери</h2>
+            <table>
+                <tr>
+                    <th>Провайдер</th>
+                    <th>Запуск</th>
+                    <th>Частка</th>
+                    <th>Сильні сторони</th>
+                </tr>
+                <tr>
+                    <td><strong>AWS</strong></td>
+                    <td>2006</td>
+                    <td>~32%</td>
+                    <td>Найширший набір сервісів</td>
+                </tr>
+                <tr>
+                    <td><strong>Azure</strong></td>
+                    <td>2010</td>
+                    <td>~23%</td>
+                    <td>Microsoft інтеграція</td>
+                </tr>
+                <tr>
+                    <td><strong>GCP</strong></td>
+                    <td>2011</td>
+                    <td>~10%</td>
+                    <td>Big Data, ML/AI</td>
+                </tr>
+                <tr>
+                    <td><strong>Alibaba</strong></td>
+                    <td>2009</td>
+                    <td>~4%</td>
+                    <td>Домінування в Азії</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Slide 36: Service Mapping -->
+        <div class="slide">
+            <h2>Концептуальний маппінг сервісів</h2>
+            <table style="font-size: 0.9em;">
+                <tr>
+                    <th>Концепція</th>
+                    <th>AWS</th>
+                    <th>Azure</th>
+                    <th>GCP</th>
+                </tr>
+                <tr>
+                    <td>VM</td>
+                    <td>EC2</td>
+                    <td>Virtual Machines</td>
+                    <td>Compute Engine</td>
+                </tr>
+                <tr>
+                    <td>Object Storage</td>
+                    <td>S3</td>
+                    <td>Blob Storage</td>
+                    <td>Cloud Storage</td>
+                </tr>
+                <tr>
+                    <td>Serverless</td>
+                    <td>Lambda</td>
+                    <td>Functions</td>
+                    <td>Cloud Functions</td>
+                </tr>
+                <tr>
+                    <td>Kubernetes</td>
+                    <td>EKS</td>
+                    <td>AKS</td>
+                    <td>GKE</td>
+                </tr>
+                <tr>
+                    <td>SQL DB</td>
+                    <td>RDS</td>
+                    <td>SQL Database</td>
+                    <td>Cloud SQL</td>
+                </tr>
+            </table>
+            <p class="center"><strong>Концепції однакові, реалізації різні!</strong></p>
+        </div>
+
+        <!-- Slide 37: Section - API & Automation -->
+        <div class="slide center">
+            <h1>6. API-First & Automation-First</h1>
+        </div>
+
+        <!-- Slide 38: API-First -->
+        <div class="slide">
+            <h2>API-First підхід</h2>
+            <p><strong>Принцип:</strong> Всі операції виконуються через API</p>
+            <pre><code>Web Console → API
+CLI → API
+SDK → API
+Terraform → API</code></pre>
+            <p class="center" style="font-size: 1.3em; margin-top: 30px;"><strong>Web Console - це лише UI над API!</strong></p>
+        </div>
+
+        <!-- Slide 39: Why API-First -->
+        <div class="slide">
+            <h2>Чому API-First?</h2>
+            <h3 class="checkmark">Переваги:</h3>
+            <ul>
+                <li><strong>Автоматизація</strong> - Scripting, CI/CD інтеграція</li>
+                <li><strong>Повторюваність</strong> - Однакові результати</li>
+                <li><strong>Версіонування</strong> - Git для інфраструктури</li>
+                <li><strong>Інтеграція</strong> - З іншими системами</li>
+            </ul>
+        </div>
+
+        <!-- Slide 40: Cloud Interaction Ways -->
+        <div class="slide">
+            <h2>Способи взаємодії з Cloud</h2>
+            <h3>1. Web Console (UI) 🖱️</h3>
+            <p>Для learning та exploration. Не для production!</p>
+            <h3>2. CLI (Command Line) 💻</h3>
+            <pre><code>aws ec2 run-instances --image-id ami-xxx
+az vm create --resource-group myRG
+gcloud compute instances create my-instance</code></pre>
+            <h3>3. SDK (Software Development Kit) 🔧</h3>
+            <pre><code>import boto3
+ec2 = boto3.resource('ec2')
+instance = ec2.create_instances(...)</code></pre>
+        </div>
+
+        <!-- Slide 41: Automation-First -->
+        <div class="slide">
+            <h2>Automation-First підхід</h2>
+            <p class="center" style="font-size: 1.5em;"><strong>Якщо робиш більше 1 разу → автоматизуй!</strong></p>
+            <pre><code>Manual → Script → IaC → GitOps → Self-Healing
+  🐌      🏃       🚀     ✈️      🤖</code></pre>
+        </div>
+
+        <!-- Slide 42: Why Automation -->
+        <div class="slide">
+            <h2>Чому автоматизація?</h2>
+            <ul style="font-size: 1.1em;">
+                <li><strong>⚡ Швидкість</strong> - Миттєве виконання, паралельність</li>
+                <li><strong>✅ Надійність</strong> - Без людських помилок</li>
+                <li><strong>📈 Масштабованість</strong> - 1 = 1000 ресурсів</li>
+                <li><strong>📚 Документація</strong> - Код як документація</li>
+                <li><strong>🔒 Compliance</strong> - Автоматичні перевірки</li>
+            </ul>
+        </div>
+
+        <!-- Slide 43: Section - AWS Example -->
+        <div class="slide center">
+            <h1>7. AWS як приклад</h1>
+        </div>
+
+        <!-- Slide 44: Why AWS -->
+        <div class="slide">
+            <h2>Чому AWS як приклад?</h2>
+            <ul>
+                <li>📊 <strong>Лідер ринку</strong> - Найбільша частка (~32%)</li>
+                <li>🎯 <strong>Найширший набір</strong> - 200+ сервісів</li>
+                <li>📖 <strong>Well-Architected</strong> - Документовані best practices</li>
+                <li>🎓 <strong>Навчальні ресурси</strong> - Величезна екосистема</li>
+            </ul>
+            <p class="center" style="font-size: 1.3em; margin-top: 40px;">⚠️ <strong>AWS - це ПРИКЛАД, не єдине рішення!</strong></p>
+        </div>
+
+        <!-- Slide 45: AWS Global Infrastructure -->
+        <div class="slide">
+            <h2>Глобальна інфраструктура AWS</h2>
+            <pre><code>        🌍 AWS Global Infrastructure
+                    │
+        ┌───────────┴───────────┐
+        │                       │
+    Regions                Edge Locations
+    (30+)                     (400+)
+        │                       │
+  Availability Zones         CloudFront
+    (90+)                      CDN</code></pre>
+        </div>
+
+        <!-- Slide 46: AWS Regions -->
+        <div class="slide">
+            <h2>Regions (Регіони)</h2>
+            <p><strong>Що це:</strong> Географічна область з множинними дата-центрами</p>
+            <h3>Приклади:</h3>
+            <ul>
+                <li>🇺🇸 us-east-1 (N. Virginia)</li>
+                <li>🇮🇪 eu-west-1 (Ireland)</li>
+                <li>🇸🇬 ap-southeast-1 (Singapore)</li>
+                <li>🇩🇪 eu-central-1 (Frankfurt)</li>
+            </ul>
+            <h3>Вибір регіону:</h3>
+            <ul>
+                <li>📍 <strong>Latency</strong> - близькість до користувачів</li>
+                <li>📋 <strong>Compliance</strong> - законодавчі вимоги</li>
+                <li>💰 <strong>Cost</strong> - різні ціни</li>
+            </ul>
+        </div>
+
+        <!-- Slide 47: Availability Zones -->
+        <div class="slide">
+            <h2>Availability Zones (AZ)</h2>
+            <p><strong>Що це:</strong> Ізольовані дата-центри в межах регіону</p>
+            <pre><code>Region: eu-west-1 (Ireland)
+├── AZ: eu-west-1a  🏢
+├── AZ: eu-west-1b  🏢
+└── AZ: eu-west-1c  🏢
+     │
+     └─ High-speed private network</code></pre>
+            <h3>Характеристики:</h3>
+            <ul>
+                <li>Фізично розділені (різні будівлі)</li>
+                <li>Незалежне електроживлення</li>
+                <li>Швидкий зв'язок між AZ</li>
+            </ul>
+            <p><strong>Best Practice:</strong> Deploy в множинні AZ</p>
+        </div>
+
+        <!-- Slide 48: AWS Free Tier -->
+        <div class="slide">
+            <h2>AWS Free Tier 🎁</h2>
+            <h3>1. 12 Months Free (перший рік)</h3>
+            <ul>
+                <li>EC2: 750 год/міс (t2.micro)</li>
+                <li>S3: 5 GB storage</li>
+                <li>RDS: 750 год/міс (db.t2.micro)</li>
+            </ul>
+            <h3>2. Always Free (завжди)</h3>
+            <ul>
+                <li>Lambda: 1M запитів/міс</li>
+                <li>DynamoDB: 25 GB storage</li>
+            </ul>
+            <p class="cross" style="font-size: 1.2em; margin-top: 20px;"><strong>⚠️ Обов'язково: Billing Alerts!</strong></p>
+        </div>
+
+        <!-- Slide 49: Summary -->
+        <div class="slide">
+            <h2>Ключові висновки</h2>
+            <ul>
+                <li>☁️ <strong>Cloud = Архітектурна парадигма</strong> (5 характеристик NIST)</li>
+                <li>🎯 <strong>Моделі обслуговування</strong> - IaaS → PaaS → SaaS</li>
+                <li>🌍 <strong>Моделі розгортання</strong> - залежать від вимог</li>
+                <li>🔓 <strong>Vendor-Agnostic</strong> - Cloud ≠ AWS</li>
+                <li>🤖 <strong>API-First + Automation-First</strong> - основа операцій</li>
+                <li>📚 <strong>AWS як приклад</strong> - не єдине рішення</li>
+            </ul>
+        </div>
+
+        <!-- Slide 50: Next Steps -->
+        <div class="slide">
+            <h2>Наступні кроки</h2>
+            <ol style="font-size: 1.2em;">
+                <li>🎁 <strong>Створіть AWS акаунт</strong> (Free Tier)</li>
+                <li>🧪 <strong>Перші експерименти</strong> - EC2, S3</li>
+                <li>💻 <strong>Освоюйте CLI</strong> - AWS CLI</li>
+                <li>🏗️ <strong>Вивчайте IaC</strong> - Terraform basics</li>
+            </ol>
+            <p class="center" style="font-size: 1.5em; margin-top: 50px;"><strong>Дякую за увагу! 🎉</strong></p>
+            <p class="center">Питання? 🙋</p>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" id="prevBtn" onclick="changeSlide(-1)">← Назад</button>
+        <button class="btn" id="nextBtn" onclick="changeSlide(1)">Вперед →</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const progressBar = document.getElementById('progressBar');
+        const slideCounter = document.getElementById('slideCounter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                }
+            });
+
+            // Update progress bar
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = progress + '%';
+
+            // Update counter
+            slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+
+            // Update button states
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
+
+            // Scroll to top of slide
+            slides[currentSlide].scrollTop = 0;
+        }
+
+        function changeSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+            updateSlide();
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                e.preventDefault();
+                if (currentSlide < totalSlides - 1) {
+                    changeSlide(1);
+                }
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                e.preventDefault();
+                if (currentSlide > 0) {
+                    changeSlide(-1);
+                }
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                currentSlide = 0;
+                updateSlide();
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                currentSlide = totalSlides - 1;
+                updateSlide();
+            }
+        });
+
+        // Touch support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) {
+                // Swipe left - next slide
+                if (currentSlide < totalSlides - 1) {
+                    changeSlide(1);
+                }
+            }
+            if (touchEndX > touchStartX + 50) {
+                // Swipe right - previous slide
+                if (currentSlide > 0) {
+                    changeSlide(-1);
+                }
+            }
+        }
+
+        // Initialize
+        updateSlide();
+
+        // Print all slides
+        window.addEventListener('beforeprint', () => {
+            slides.forEach(slide => {
+                slide.classList.add('active');
+            });
+        });
+
+        window.addEventListener('afterprint', () => {
+            updateSlide();
+        });
+    </script>
+</body>
+</html>
