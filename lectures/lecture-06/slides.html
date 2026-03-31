@@ -21,17 +21,31 @@
       --muted: #95a5a6;
     }
 
+    /* Base font reduced so slide content fits at 1920×1080 */
+    .reveal { font-size: 34px; }
+
     .reveal h1, .reveal h2 { color: var(--accent); }
     .reveal h3 { color: #ecf0f1; }
 
     .reveal section { text-align: left; }
     .reveal .title-slide { text-align: center; }
 
-    .reveal pre { font-size: 0.62em; box-shadow: none; }
-    .reveal code { font-size: 0.88em; }
-    .reveal table { font-size: 0.78em; width: 100%; }
+    /* Tighter heading margins */
+    .reveal h2 { margin: 0 0 0.3em; font-size: 1.2em; }
+    .reveal h3 { margin: 0 0 0.25em; font-size: 0.95em; }
+
+    .reveal pre { font-size: 0.50em; box-shadow: none; margin: 0.3em 0; }
+    .reveal code { font-size: 0.72em; }
+    .reveal table { font-size: 0.68em; width: 100%; }
     .reveal table th { background: #2c3e50; color: var(--accent); }
-    .reveal table td, .reveal table th { border: 1px solid #444; padding: 6px 10px; }
+    .reveal table td, .reveal table th { border: 1px solid #444; padding: 4px 8px; }
+
+    /* Allow per-slide vertical scroll when content still overflows */
+    .reveal .slides section {
+      overflow-y: auto;
+      max-height: 100%;
+      box-sizing: border-box;
+    }
 
     .tag-good  { color: var(--success); font-weight: bold; }
     .tag-bad   { color: var(--danger);  font-weight: bold; }
@@ -42,7 +56,7 @@
       display: inline-block;
       padding: 2px 10px;
       border-radius: 12px;
-      font-size: 0.72em;
+      font-size: 0.68em;
       font-weight: bold;
       margin: 2px;
     }
@@ -54,35 +68,35 @@
     .two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1em;
+      gap: 0.7em;
     }
     .three-col {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 0.8em;
+      gap: 0.6em;
     }
 
     .box {
       border: 1px solid #555;
       border-radius: 8px;
-      padding: 0.6em 1em;
+      padding: 0.4em 0.8em;
       background: rgba(255,255,255,0.05);
-      font-size: 0.82em;
+      font-size: 0.76em;
     }
-    .box h4 { margin: 0 0 0.4em; color: var(--accent); font-size: 1em; }
+    .box h4 { margin: 0 0 0.3em; color: var(--accent); font-size: 0.95em; }
 
     .note {
       border-left: 4px solid var(--accent);
-      padding: 0.4em 0.8em;
+      padding: 0.3em 0.7em;
       background: rgba(243,156,18,0.1);
-      font-size: 0.8em;
-      margin-top: 0.6em;
+      font-size: 0.70em;
+      margin-top: 0.4em;
     }
     .slide-num {
       position: absolute;
-      top: 10px;
-      right: 16px;
-      font-size: 0.5em;
+      top: 8px;
+      right: 14px;
+      font-size: 0.44em;
       color: #666;
     }
 
@@ -91,18 +105,18 @@
       display: flex;
       border-radius: 6px;
       overflow: hidden;
-      font-size: 0.72em;
-      margin: 0.6em 0;
+      font-size: 0.65em;
+      margin: 0.4em 0;
     }
     .lc-bar div {
-      padding: 8px 12px;
+      padding: 6px 10px;
       flex: 1;
       text-align: center;
       font-weight: bold;
     }
 
-    ul li { margin-bottom: 0.3em; }
-    ol li  { margin-bottom: 0.3em; }
+    ul li { margin-bottom: 0.18em; }
+    ol li  { margin-bottom: 0.18em; }
   </style>
 </head>
 <body>
@@ -1439,9 +1453,11 @@ aws s3api get-bucket-lifecycle-configuration \
     controls: true,
     progress: true,
     center: false,
-    width: 1100,
-    height: 700,
-    margin: 0.04,
+    width: 1750,
+    height: 900,
+    margin: 0.03,
+    minScale: 0.2,
+    maxScale: 2.0,
     plugins: [ RevealHighlight, RevealNotes ],
     keyboard: {
       // Space / Arrow keys work by default
