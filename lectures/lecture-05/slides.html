@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Лекція 5 — Обчислювальні ресурси та Linux у хмарі</title>
+
+  <!-- Reveal.js CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+
+  <style>
+    :root {
+      --accent: #f39c12;
+      --success: #2ecc71;
+      --danger: #e74c3c;
+      --info: #3498db;
+      --muted: #95a5a6;
+    }
+
+    /* Base font reduced so slide content fits at 1920×1080 */
+    .reveal { font-size: 34px; }
+
+    .reveal h1, .reveal h2 { color: var(--accent); }
+    .reveal h3 { color: #ecf0f1; }
+    .reveal section { text-align: left; }
+    .reveal .title-slide { text-align: center; }
+
+    /* Tighter heading margins */
+    .reveal h2 { margin: 0 0 0.3em; font-size: 1.2em; }
+    .reveal h3 { margin: 0 0 0.25em; font-size: 0.95em; }
+
+    .reveal pre { font-size: 0.50em; box-shadow: none; margin: 0.3em 0; }
+    .reveal code { font-size: 0.72em; }
+    .reveal table { font-size: 0.68em; width: 100%; }
+    .reveal table th { background: #2c3e50; color: var(--accent); }
+    .reveal table td, .reveal table th { border: 1px solid #444; padding: 4px 8px; }
+
+    /* Allow per-slide vertical scroll when content still overflows */
+    .reveal .slides section {
+      overflow-y: auto;
+      max-height: 100%;
+      box-sizing: border-box;
+    }
+
+    .tag-good  { color: var(--success); font-weight: bold; }
+    .tag-bad   { color: var(--danger);  font-weight: bold; }
+    .tag-warn  { color: var(--accent);  font-weight: bold; }
+    .tag-info  { color: var(--info);    font-weight: bold; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7em;
+    }
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.6em;
+    }
+
+    .box {
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 0.4em 0.8em;
+      background: rgba(255,255,255,0.05);
+      font-size: 0.76em;
+    }
+    .box h4 { margin: 0 0 0.3em; color: var(--accent); font-size: 0.95em; }
+
+    .note {
+      border-left: 4px solid var(--accent);
+      padding: 0.3em 0.7em;
+      background: rgba(243,156,18,0.1);
+      font-size: 0.70em;
+      margin-top: 0.4em;
+    }
+
+    .slide-num {
+      position: absolute;
+      top: 8px;
+      right: 14px;
+      font-size: 0.44em;
+      color: #666;
+    }
+
+    ul li { margin-bottom: 0.18em; }
+    ol li  { margin-bottom: 0.18em; }
+
+    .evo-bar {
+      display: flex;
+      gap: 4px;
+      font-size: 0.65em;
+      margin: 0.4em 0;
+    }
+    .evo-bar div {
+      flex: 1;
+      padding: 7px 5px;
+      text-align: center;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 1 — TITLE
+════════════════════════════════════════════════════════════ -->
+<section class="title-slide">
+  <h1 style="font-size:1.6em;">Лекція 5</h1>
+  <h2 style="font-size:1.2em; color:#ecf0f1;">Обчислювальні ресурси<br>та Linux у хмарі</h2>
+  <hr style="border-color:#555; margin:1em auto; width:60%;" />
+  <p style="color:var(--muted); font-size:0.8em;">
+    Курс «Хмарні технології інформаційних систем»<br>
+    Бакалавр ІТ · 3 курс · 2 години
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 2 — AGENDA
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">2 / 45</span>
+  <h2>Agenda</h2>
+  <div class="two-col" style="font-size:0.82em;">
+    <ol>
+      <li>Що таке обчислювальний ресурс?</li>
+      <li>Еволюція: Bare Metal → Serverless</li>
+      <li>Гіпервізори Type 1 та Type 2</li>
+      <li>AWS Nitro System</li>
+      <li>Virtual Machines: переваги/межі</li>
+      <li>Containers: namespace, cgroups</li>
+      <li>VM vs Container vs Serverless</li>
+      <li>Linux-first mindset</li>
+      <li>Базові команди Linux</li>
+      <li>systemd та сервіси</li>
+      <li>Мережа та ports у Linux</li>
+    </ol>
+    <ol start="12">
+      <li>Файлова система Linux</li>
+      <li>Логи та journald</li>
+      <li>Bash scripting основи</li>
+      <li>SSH та управління доступом</li>
+      <li>Управління пакетами</li>
+      <li>Cron та автоматизація</li>
+      <li>Immutable vs Mutable Infrastructure</li>
+      <li>Golden Image / AMI концепція</li>
+      <li>Stateless vs Stateful системи</li>
+      <li>AWS EC2 Introduction</li>
+      <li>EC2 Instance Types</li>
+      <li>EC2 Purchasing Options</li>
+      <li>Auto Scaling Group</li>
+      <li>Практичне завдання</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 3 — ЩО ТАКЕ ОБЧИСЛЮВАЛЬНИЙ РЕСУРС?
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">3 / 45</span>
+  <h2>Що таке обчислювальний ресурс?</h2>
+  <div class="three-col" style="margin-top:0.8em;">
+    <div class="box">
+      <h4>💻 CPU</h4>
+      <ul>
+        <li>vCPU = нитка гіпервізора</li>
+        <li>ARM vs x86</li>
+        <li>Clock speed</li>
+        <li>Core count</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>🧠 RAM</h4>
+      <ul>
+        <li>Оперативна пам'ять</li>
+        <li>GB / TiB</li>
+        <li>Memory-optimized</li>
+        <li>ECC (cloud)</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>🌐 Network</h4>
+      <ul>
+        <li>Bandwidth (Gbps)</li>
+        <li>Enhanced Networking</li>
+        <li>SR-IOV</li>
+        <li>ENA driver</li>
+      </ul>
+    </div>
+  </div>
+  <pre style="margin-top:0.6em;"><code class="language-text">
+Bare metal server → завжди 100% CPU/RAM
+Cloud instance   → shared host, allocated vCPU + RAM + Network
+Serverless       → CPU/RAM on-demand, duration billing
+  </code></pre>
+  <div class="note">💡 У хмарі "сервер" — це абстракція над фізичним залізом. Ви орендуєте ресурси, а не машину.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 4 — ЕВОЛЮЦІЯ ОБЧИСЛЕНЬ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">4 / 45</span>
+  <h2>Еволюція обчислень</h2>
+  <div class="evo-bar">
+    <div style="background:#7f8c8d;">🏭<br>Bare Metal<br><small>1990s</small></div>
+    <div style="background:#2980b9;">🖥️<br>Virtual Machines<br><small>2000s</small></div>
+    <div style="background:#27ae60;">📦<br>Containers<br><small>2013+</small></div>
+    <div style="background:#e67e22;">⚡<br>Serverless<br><small>2014+</small></div>
+    <div style="background:#8e44ad;">🤖<br>AI Instances<br><small>2020+</small></div>
+  </div>
+  <table style="margin-top:0.5em;">
+    <tr><th>Рівень</th><th>Ізоляція</th><th>Startup</th><th>Overhead</th><th>Гнучкість</th></tr>
+    <tr><td>Bare Metal</td><td>Фізична</td><td>Хвилини</td><td>0%</td><td>Низька</td></tr>
+    <tr><td>VM</td><td>Гіпервізор</td><td>Секунди–хв</td><td>~5–10%</td><td>Висока</td></tr>
+    <tr><td>Container</td><td>OS Kernel</td><td>Мілісекунди</td><td>~1–3%</td><td>Дуже висока</td></tr>
+    <tr><td>Serverless</td><td>Runtime sandbox</td><td>Холодний старт</td><td>~0% idle</td><td>Максимальна</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 5 — ГІПЕРВІЗОРИ TYPE 1 vs TYPE 2
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">5 / 45</span>
+  <h2>Гіпервізори: Type 1 vs Type 2</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>Type 1 (Bare-metal)</h4>
+      <pre><code class="language-text">
+┌──────────────┐
+│    VM    VM  │
+│  ┌──┐  ┌──┐ │
+│  │OS│  │OS│ │
+└──┴──┴──┴──┘─┘
+   Hypervisor
+   ──────────
+   Hardware
+      </code></pre>
+      <ul style="margin-top:0.3em;">
+        <li>Пряме управління залізом</li>
+        <li>KVM, Xen, VMware ESXi, Hyper-V</li>
+        <li><span class="tag-good">Висока продуктивність</span></li>
+        <li>Використовується в хмарах</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>Type 2 (Hosted)</h4>
+      <pre><code class="language-text">
+┌──────────────┐
+│  VM    VM    │
+│ ┌──┐  ┌──┐  │
+│ │OS│  │OS│  │
+└─┴──┴──┴──┴──┘
+  Hypervisor
+  ──────────
+  Host OS
+  ──────────
+  Hardware
+      </code></pre>
+      <ul>
+        <li>Через ОС хосту</li>
+        <li>VirtualBox, VMware Workstation</li>
+        <li><span class="tag-warn">Більший overhead</span></li>
+        <li>Для розробки та навчання</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 6 — ПОПУЛЯРНІ ГІПЕРВІЗОРИ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">6 / 45</span>
+  <h2>Популярні гіпервізори</h2>
+  <table>
+    <tr><th>Гіпервізор</th><th>Тип</th><th>Вендор</th><th>Де використовується</th></tr>
+    <tr><td>KVM</td><td>Type 1</td><td>Linux kernel</td><td>AWS (старий), OpenStack</td></tr>
+    <tr><td>Xen</td><td>Type 1</td><td>Open Source</td><td>AWS (pre-Nitro), Citrix</td></tr>
+    <tr><td>VMware ESXi</td><td>Type 1</td><td>Broadcom</td><td>Enterprise datacenter</td></tr>
+    <tr><td>Hyper-V</td><td>Type 1</td><td>Microsoft</td><td>Azure, Windows Server</td></tr>
+    <tr><td>AWS Nitro</td><td>Type 1 (custom)</td><td>AWS</td><td>EC2 (всі нові типи)</td></tr>
+    <tr><td>VirtualBox</td><td>Type 2</td><td>Oracle</td><td>Dev/навчання</td></tr>
+    <tr><td>VMware Workstation</td><td>Type 2</td><td>Broadcom</td><td>Dev/тестування</td></tr>
+  </table>
+  <div class="note">💡 KVM вбудований прямо в Linux kernel (з 2007). На більшості Linux серверів є KVM "з коробки".</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 7 — AWS NITRO SYSTEM
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">7 / 45</span>
+  <h2>AWS Nitro System</h2>
+  <pre><code class="language-text">
+Традиційний гіпервізор:        AWS Nitro:
+┌─────────────────────┐         ┌─────────────────────┐
+│       Guest VM      │         │      Guest VM        │
+├─────────────────────┤         ├─────────────────────┤
+│  Hypervisor (CPU)   │         │  Thin Nitro VMM     │ ← мінімальний overhead
+│  Network stack (CPU)│         ├─────────────────────┤
+│  Storage stack (CPU)│         │  Nitro Card (Network)│ ← окремий ASIC чіп
+├─────────────────────┤         │  Nitro Card (Storage)│ ← окремий ASIC чіп
+│      Hardware       │         │  Nitro Security Chip │
+└─────────────────────┘         └─────────────────────┘
+  CPU витрачається на            CPU ПОВНІСТЮ для VM!
+  гіпервізор (~30%)
+  </code></pre>
+  <ul style="font-size:0.82em;">
+    <li><strong>Nitro Cards</strong> — спеціалізовані ASICs для I/O (не CPU)</li>
+    <li><strong>Nitro Security Chip</strong> — захист firmware (hardware root of trust)</li>
+    <li>Результат: ~95-99% CPU для VM, найвища щільність і продуктивність</li>
+    <li>Всі сучасні EC2 типи (m5, c6g, r6i...) — на Nitro</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 8 — VIRTUAL MACHINES
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">8 / 45</span>
+  <h2>Virtual Machines: переваги та обмеження</h2>
+  <div class="two-col">
+    <div>
+      <h3 style="font-size:0.9em; color:var(--success);">✅ Переваги</h3>
+      <ul style="font-size:0.82em;">
+        <li>Повна ізоляція (kernel рівень)</li>
+        <li>Будь-яка ОС (Windows, Linux, FreeBSD)</li>
+        <li>Snapshot / live migration</li>
+        <li>Зрілі інструменти (VMware, vSphere)</li>
+        <li>Відомий security model</li>
+        <li>Ліцензування per-VM</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="font-size:0.9em; color:var(--danger);">⚠️ Обмеження</h3>
+      <ul style="font-size:0.82em;">
+        <li>Повна ОС = gigabytes RAM overhead</li>
+        <li>Boot time: секунди–хвилини</li>
+        <li>Щільність: десятки VM / host</li>
+        <li>Image розмір: GB</li>
+        <li>Resource sharing inefficiency</li>
+        <li>Патчі для кожної ОС окремо</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">💡 VM — золотий стандарт для production workloads де потрібна повна ізоляція та специфічна ОС.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 9 — CONTAINERS: ПРИНЦИПИ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">9 / 45</span>
+  <h2>Containers: namespace та cgroups</h2>
+  <pre><code class="language-text">
+Linux Kernel
+│
+├── Namespace (ізоляція):
+│     PID namespace    → процеси не бачать один одного
+│     Network ns       → власний мережевий стек
+│     Mount ns         → власна файлова система
+│     User ns          → окремі UID/GID
+│     IPC ns           → ізоляція IPC
+│
+└── cgroups (обмеження ресурсів):
+      cpu.max          → ліміт CPU
+      memory.max       → ліміт RAM
+      blkio.weight     → пріоритет I/O
+      cpuset.cpus      → прив'язати до конкретних ядер
+  </code></pre>
+  <div class="note">
+    💡 Container — це <strong>процес</strong> на хост-ОС з обмеженим "виглядом" через namespace та ресурсним лімітом через cgroups. <strong>Немає окремого kernel!</strong>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 10 — VM vs CONTAINER vs SERVERLESS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">10 / 45</span>
+  <h2>VM vs Container vs Serverless</h2>
+  <table>
+    <tr><th>Параметр</th><th>VM</th><th>Container</th><th>Serverless</th></tr>
+    <tr><td>ОС</td><td>Повна (окрема)</td><td>Shared kernel</td><td>Runtime only</td></tr>
+    <tr><td>Startup time</td><td>Секунди–хв</td><td>Мілісекунди</td><td>Cold: сек / Warm: мс</td></tr>
+    <tr><td>RAM overhead</td><td>~512MB+</td><td>~5–50MB</td><td>~0 idle</td></tr>
+    <tr><td>Ізоляція</td><td>Strong (kernel)</td><td>Moderate (process)</td><td>Runtime sandbox</td></tr>
+    <tr><td>Portability</td><td>VM image (GB)</td><td>Container image (MB)</td><td>Code + dependencies</td></tr>
+    <tr><td>Density/host</td><td>10–50</td><td>100–1000</td><td>∞ (managed)</td></tr>
+    <tr><td>Cost model</td><td>За годину</td><td>За годину/pod</td><td>За виклик + мс</td></tr>
+    <tr><td>AWS сервіс</td><td>EC2</td><td>ECS / EKS</td><td>Lambda</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 11 — КОЛИ ЩО ВИБИРАТИ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">11 / 45</span>
+  <h2>Коли що вибирати?</h2>
+  <pre><code class="language-text">
+Потрібна специфічна ОС або Windows?
+  └─► VM (EC2)
+
+Довготривалий процес + повна ізоляція?
+  └─► VM (EC2)
+
+Мікросервіс, 12-factor app, швидкий деплой?
+  └─► Container (ECS / EKS)
+
+Бекенд-обробник подій, API, cron-задачі?
+  └─► Serverless (Lambda)
+
+ML training / GPU workloads?
+  └─► VM (EC2 p3/p4 GPU instances)
+
+На-edge / IoT?
+  └─► Container (Greengrass) або Lambda@Edge
+  </code></pre>
+  <div class="note">⚠️ У реальних системах всі три рівні часто використовуються разом.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 12 — LINUX-FIRST MINDSET
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">12 / 45</span>
+  <h2>Linux-first mindset у хмарі</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>📊 Статистика</h4>
+      <ul>
+        <li>~90% публічних хмарних workloads — Linux</li>
+        <li>Всі AWS managed сервіси — Linux під капотом</li>
+        <li>Kubernetes nodes — Linux</li>
+        <li>Containers базуються на Linux kernel</li>
+        <li>Усі AWS-managed DB — Linux</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>🏆 Переваги Linux в хмарі</h4>
+      <ul>
+        <li>Open source = безкоштовно</li>
+        <li>Легкі AMI (Amazon Linux 2, Ubuntu)</li>
+        <li>Автоматизація: bash, Python</li>
+        <li>Security: менша attack surface</li>
+        <li>Package managers (apt, yum)</li>
+        <li>SSH — стандарт доступу</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">💡 "Linux-first" не означає "Linux завжди". Але означає: якщо можеш вибрати — вибирай Linux.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 13 — ДИСТРИБУТИВИ LINUX У ХМАРІ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">13 / 45</span>
+  <h2>Linux дистрибутиви у хмарі</h2>
+  <table>
+    <tr><th>Дистрибутив</th><th>Основа</th><th>Package manager</th><th>Типове використання</th></tr>
+    <tr><td>Amazon Linux 2023</td><td>RHEL-based</td><td>dnf/rpm</td><td>AWS оптимізований, default</td></tr>
+    <tr><td>Ubuntu 22.04/24.04</td><td>Debian</td><td>apt</td><td>Найпопулярніший, dev-friendly</td></tr>
+    <tr><td>RHEL / CentOS Stream</td><td>RHEL</td><td>dnf/rpm</td><td>Enterprise, банки, телеком</td></tr>
+    <tr><td>Debian 12</td><td>Debian</td><td>apt</td><td>Мінімалістичний, стабільний</td></tr>
+    <tr><td>Alpine Linux</td><td>musl/busybox</td><td>apk</td><td>Docker base images (~5MB)</td></tr>
+    <tr><td>Flatcar Container OS</td><td>CoreOS</td><td>—</td><td>Immutable, Kubernetes nodes</td></tr>
+  </table>
+  <div class="note">💡 Amazon Linux 2023 = AWS-optimized ядро, security patches, ENA driver, SSM agent — ідеальний старт для EC2.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 14 — БАЗОВІ КОМАНДИ LINUX
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">14 / 45</span>
+  <h2>Базові команди Linux: навігація</h2>
+  <pre><code class="language-bash">
+# Навігація
+pwd              # поточна директорія
+ls -la           # список файлів (з правами)
+cd /var/log      # перейти до директорії
+cd ~             # домашня директорія
+cd -             # попередня директорія
+
+# Файлові операції
+cp source dest   # копіювати
+mv old new       # перемістити / перейменувати
+rm -rf dir/      # видалити рекурсивно (обережно!)
+mkdir -p a/b/c   # створити вкладені директорії
+
+# Перегляд
+cat file.txt     # вивести вміст
+less file.txt    # посторінковий перегляд
+head -20 file    # перші 20 рядків
+tail -f log.txt  # стежити за файлом у реальному часі
+
+# Пошук
+find /etc -name "*.conf"    # знайти файли
+grep -r "error" /var/log/   # шукати текст рекурсивно
+  </code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 15 — ПРОЦЕСИ В LINUX
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">15 / 45</span>
+  <h2>Процеси та сервіси в Linux</h2>
+  <pre><code class="language-bash">
+# Перегляд процесів
+ps aux                    # всі процеси
+ps aux | grep nginx       # фільтрація
+top                       # інтерактивний моніторинг
+htop                      # покращений top
+
+# Управління процесами
+kill <PID>                # надіслати SIGTERM (graceful)
+kill -9 <PID>             # SIGKILL (force kill)
+kill -HUP <PID>           # SIGHUP (перезавантажити конфіг)
+
+# Фонові процеси
+./script.sh &             # запустити у фоні
+jobs                      # список фонових задач
+fg %1                     # повернути на передній план
+nohup ./script.sh &       # не зупиняти після logout
+
+# Ресурси
+free -h                   # оперативна пам'ять
+df -h                     # дисковий простір
+du -sh /var/log/*         # розмір директорій
+lscpu                     # інформація про CPU
+  </code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 16 — SYSTEMD
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">16 / 45</span>
+  <h2>systemd: менеджер сервісів</h2>
+  <div class="two-col">
+    <div>
+      <pre><code class="language-bash">
+# systemctl — управління
+systemctl start nginx
+systemctl stop nginx
+systemctl restart nginx
+systemctl reload nginx   # reload config
+
+systemctl status nginx   # детальний статус
+systemctl enable nginx   # autostart при boot
+systemctl disable nginx
+
+# Systemd одиниці
+systemctl list-units --type=service
+systemctl list-units --failed
+      </code></pre>
+    </div>
+    <div>
+      <h3 style="font-size:0.85em;">Unit файл приклад:</h3>
+      <pre><code class="language-ini">
+# /etc/systemd/system/myapp.service
+[Unit]
+Description=My Application
+After=network.target
+
+[Service]
+Type=simple
+User=appuser
+WorkingDirectory=/opt/myapp
+ExecStart=/opt/myapp/bin/start
+Restart=always
+RestartSec=5
+Environment=PORT=8080
+
+[Install]
+WantedBy=multi-user.target
+      </code></pre>
+    </div>
+  </div>
+  <div class="note">💡 systemd — PID 1 у більшості сучасних Linux систем. Замінив init, upstart, SysV init.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 17 — МЕРЕЖА В LINUX
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">17 / 45</span>
+  <h2>Мережа в Linux</h2>
+  <pre><code class="language-bash">
+# Мережеві інтерфейси
+ip addr show              # всі інтерфейси та IP
+ip link show              # статус інтерфейсів
+ip route show             # таблиця маршрутів
+
+# Діагностика
+ping 8.8.8.8              # перевірка connectivity
+traceroute 8.8.8.8        # маршрут пакету
+dig google.com            # DNS lookup
+nslookup google.com       # DNS lookup (старіший)
+curl -I https://api.example.com   # HTTP заголовки
+
+# Відкриті порти та з'єднання
+ss -tlnp                  # TCP listening ports (сучасний)
+netstat -tlnp             # аналог (застарілий, але widespread)
+lsof -i :80               # хто використовує порт 80
+
+# Завантаження
+wget https://example.com/file.zip
+curl -O https://example.com/file.zip
+  </code></pre>
+  <div class="note">💡 <code>ss</code> замінює <code>netstat</code> у сучасних системах. Але <code>netstat</code> ще дуже поширений.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 18 — PORTS ТА СОКЕТИ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">18 / 45</span>
+  <h2>Ports та сокети</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>🔢 Відомі порти</h4>
+      <table style="font-size:0.85em;">
+        <tr><th>Порт</th><th>Сервіс</th></tr>
+        <tr><td>22</td><td>SSH</td></tr>
+        <tr><td>80</td><td>HTTP</td></tr>
+        <tr><td>443</td><td>HTTPS</td></tr>
+        <tr><td>3306</td><td>MySQL</td></tr>
+        <tr><td>5432</td><td>PostgreSQL</td></tr>
+        <tr><td>6379</td><td>Redis</td></tr>
+        <tr><td>27017</td><td>MongoDB</td></tr>
+        <tr><td>8080</td><td>HTTP alt / app</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <h4>📋 Правила безпеки EC2</h4>
+      <pre><code class="language-text">
+Інбаунд правила (Security Group):
+  22/tcp  ← My IP (SSH)
+  80/tcp  ← 0.0.0.0/0 (HTTP)
+  443/tcp ← 0.0.0.0/0 (HTTPS)
+
+Аутбаунд (default):
+  All traffic → 0.0.0.0/0
+      </code></pre>
+      <ul style="font-size:0.82em; margin-top:0.4em;">
+        <li>Порти 0–1023: privileged (root)</li>
+        <li>Порти 1024+: unprivileged</li>
+        <li>Обмежуй доступ по IP!</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 19 — ФАЙЛОВА СИСТЕМА LINUX
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">19 / 45</span>
+  <h2>Файлова система Linux (FHS)</h2>
+  <pre><code class="language-text">
+/                     Root — кореневий каталог
+├── /etc/             Конфігураційні файли (nginx.conf, sshd_config)
+├── /var/             Змінні дані
+│   ├── /var/log/     Логи (syslog, auth.log, nginx/access.log)
+│   ├── /var/lib/     Стан застосунків (MySQL data, Docker)
+│   └── /var/run/     Runtime дані (PID файли)
+├── /home/            Домашні директорії користувачів
+├── /root/            Домашня директорія root
+├── /tmp/             Тимчасові файли (очищується після reboot)
+├── /usr/             User programs
+│   ├── /usr/bin/     Виконувані файли (nginx, python3)
+│   └── /usr/lib/     Бібліотеки
+├── /opt/             Сторонні застосунки (custom installs)
+├── /proc/            Псевдо-ФС: стан ядра та процесів
+└── /sys/             Псевдо-ФС: hardware та kernel інтерфейс
+  </code></pre>
+  <div class="note">💡 Конфіги в <code>/etc</code>, логи в <code>/var/log</code>, застосунки в <code>/opt</code> або <code>/usr/bin</code>. Знай де шукати!</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 20 — ЛОГИ В LINUX
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">20 / 45</span>
+  <h2>Логи в Linux: journald та /var/log</h2>
+  <div class="two-col">
+    <div>
+      <h3 style="font-size:0.85em;">journald (systemd)</h3>
+      <pre><code class="language-bash">
+# Перегляд журналу
+journalctl -u nginx       # лог сервісу
+journalctl -f             # follow (real-time)
+journalctl --since "1h ago"
+journalctl -p err         # тільки помилки
+journalctl -n 50          # останні 50 рядків
+journalctl --no-pager | grep "Failed"
+      </code></pre>
+    </div>
+    <div>
+      <h3 style="font-size:0.85em;">Файли в /var/log</h3>
+      <pre><code class="language-bash">
+/var/log/syslog         # загальний лог
+/var/log/auth.log       # автентифікація/SSH
+/var/log/kern.log       # ядро
+/var/log/nginx/         # access.log, error.log
+/var/log/mysql/         # MySQL error log
+
+# Хвіст логу в реальному часі
+tail -f /var/log/nginx/error.log
+tail -f /var/log/auth.log | grep "Failed"
+      </code></pre>
+    </div>
+  </div>
+  <div class="note">💡 У хмарі логи часто відправляють у CloudWatch Logs або ELK Stack — не зберігай на диску EC2.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 21 — BASH SCRIPTING ОСНОВИ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">21 / 45</span>
+  <h2>Bash scripting: основи</h2>
+  <pre><code class="language-bash">
+#!/bin/bash
+# Перший рядок = shebang (якій оболонці виконувати)
+
+# Змінні
+NAME="world"
+echo "Hello, $NAME!"
+
+COUNT=$(ls /etc | wc -l)   # command substitution
+echo "Files in /etc: $COUNT"
+
+# Умовні оператори
+if [ -f "/etc/nginx/nginx.conf" ]; then
+    echo "Nginx config exists"
+elif [ -d "/etc/apache2" ]; then
+    echo "Apache found"
+else
+    echo "No web server config"
+fi
+
+# Перевірки
+[ -f file ]   # файл існує
+[ -d dir ]    # директорія існує
+[ -z "$VAR" ] # рядок пустий
+[ $A -eq $B ] # числа рівні
+[ $A -gt $B ] # більше ніж
+  </code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 22 — BASH LOOPS ТА FUNCTIONS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">22 / 45</span>
+  <h2>Bash: loops та функції</h2>
+  <pre><code class="language-bash">
+# For loop
+for server in web-01 web-02 web-03; do
+    echo "Checking $server..."
+    ping -c 1 $server &>/dev/null && echo "UP" || echo "DOWN"
+done
+
+# While loop
+while true; do
+    CPU=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}')
+    echo "CPU: $CPU%"
+    sleep 5
+done
+
+# Функції
+check_service() {
+    local SERVICE=$1
+    if systemctl is-active --quiet "$SERVICE"; then
+        echo "$SERVICE: ✅ Running"
+    else
+        echo "$SERVICE: ❌ Down"
+        systemctl start "$SERVICE"
+    fi
+}
+
+check_service nginx
+check_service mysql
+
+# Exit codes: 0 = успіх, ≠0 = помилка
+my_cmd || { echo "FAILED"; exit 1; }
+  </code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 23 — SSH: ПІДКЛЮЧЕННЯ ДО EC2
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">23 / 45</span>
+  <h2>SSH: підключення до EC2</h2>
+  <pre><code class="language-bash">
+# Підключення з key pair
+ssh -i ~/.ssh/my-key.pem ec2-user@54.123.45.67
+
+# Типові usernames:
+#   Amazon Linux 2/2023:   ec2-user
+#   Ubuntu:                ubuntu
+#   RHEL/CentOS:           ec2-user або centos
+#   Debian:                admin
+
+# ~/.ssh/config для зручності
+Host my-server
+    HostName 54.123.45.67
+    User ec2-user
+    IdentityFile ~/.ssh/my-key.pem
+    ServerAliveInterval 60
+
+ssh my-server    # тепер просто так!
+
+# SCP — копіювання файлів
+scp -i my-key.pem file.txt ec2-user@54.123.45.67:/tmp/
+scp -i my-key.pem -r ec2-user@54.123.45.67:/var/log/ ./logs/
+
+# SSH tunneling (port forwarding)
+ssh -L 8080:localhost:80 my-server   # local → remote
+  </code></pre>
+  <div class="note">🔐 Ніколи не давай .pem файл нікому і не зберігай на публічних сховищах!</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 24 — УПРАВЛІННЯ ПАКЕТАМИ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">24 / 45</span>
+  <h2>Управління пакетами</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>apt (Debian/Ubuntu)</h4>
+      <pre><code class="language-bash">
+apt update           # оновити каталог
+apt upgrade          # оновити пакети
+apt install nginx    # встановити
+apt remove nginx     # видалити
+apt purge nginx      # видалити + конфіги
+apt search "web server"
+apt show nginx       # деталі пакету
+dpkg -l              # список встановлених
+      </code></pre>
+    </div>
+    <div class="box">
+      <h4>dnf/yum (RHEL/Amazon Linux)</h4>
+      <pre><code class="language-bash">
+dnf update           # оновити все
+dnf install nginx    # встановити
+dnf remove nginx     # видалити
+dnf search nginx     # пошук
+dnf info nginx       # деталі
+rpm -qa              # список встановлених
+dnf history          # історія змін
+      </code></pre>
+    </div>
+  </div>
+  <div class="note">💡 <strong>Best practice:</strong> У User Data скрипті EC2 завжди починай з <code>apt update && apt upgrade -y</code> (Ubuntu) або <code>dnf update -y</code> (Amazon Linux) для отримання останніх security патчів.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 25 — CRON ТА АВТОМАТИЗАЦІЯ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">25 / 45</span>
+  <h2>Cron та scheduled tasks</h2>
+  <pre><code class="language-bash">
+# Crontab синтаксис:
+# хв   год   день_місяця   місяць   день_тижня   команда
+#  *    *         *           *          *
+
+crontab -e            # редагувати crontab поточного юзера
+crontab -l            # переглянути
+sudo crontab -e       # crontab для root
+
+# Приклади:
+*/5 * * * *   /opt/app/health-check.sh          # кожні 5 хвилин
+0 2 * * *     /usr/bin/backup.sh                # щодня о 02:00
+0 */6 * * *   aws s3 sync /data s3://my-bucket  # кожні 6 год
+0 0 * * 0     find /tmp -mtime +7 -delete       # неділя, видалити старі файли
+30 1 1 * *    certbot renew                     # 1-го числа о 01:30
+
+# Логування cron задач
+0 2 * * * /opt/backup.sh >> /var/log/backup.log 2>&1
+  </code></pre>
+  <div class="note">💡 У AWS для складних scheduled задач використовуй <strong>EventBridge Scheduler</strong> або <strong>Lambda</strong> — надійніше, ніж cron на EC2.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 26 — USER DATA: CLOUD-INIT
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">26 / 45</span>
+  <h2>EC2 User Data: cloud-init</h2>
+  <pre><code class="language-bash">
+#!/bin/bash
+# User Data виконується ОДИН РАЗ при першому boot
+
+# Оновити систему
+dnf update -y
+
+# Встановити nginx
+dnf install -y nginx
+
+# Налаштувати сторінку
+cat > /usr/share/nginx/html/index.html << 'EOF'
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;&lt;body&gt;
+  &lt;h1&gt;Hello from EC2!&lt;/h1&gt;
+  &lt;p&gt;Instance: $(hostname -f)&lt;/p&gt;
+&lt;/body&gt;&lt;/html&gt;
+EOF
+
+# Увімкнути та стартувати
+systemctl enable nginx
+systemctl start nginx
+
+# Логування для дебагу
+echo "Setup complete at $(date)" >> /var/log/user-data.log
+  </code></pre>
+  <div class="note">💡 Лог User Data: <code>/var/log/cloud-init-output.log</code>. Перевіряй тут якщо щось не запустилось.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 27 — IMMUTABLE INFRASTRUCTURE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">27 / 45</span>
+  <h2>Immutable Infrastructure: концепція</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>🔧 Mutable Infrastructure</h4>
+      <pre><code class="language-text">
+Сервер живе місяцями/роками
+       ↓
+ssh → apt upgrade → config edit
+       ↓
+git pull → restart nginx
+       ↓
+"snowflake server" — унікальний,
+невідтворюваний стан
+       ↓
+Проблема: "Works on my server!"
+      </code></pre>
+    </div>
+    <div class="box">
+      <h4>🏗️ Immutable Infrastructure</h4>
+      <pre><code class="language-text">
+AMI v1.0 (baked image)
+    ↓  Deploy
+EC2 instances (v1.0)
+    ↓  New version needed
+AMI v2.0 (new baked image)
+    ↓  Deploy
+EC2 instances (v2.0)  ← нові
+    ↓
+EC2 instances (v1.0)  ← terminated
+      </code></pre>
+    </div>
+  </div>
+  <div class="note">💡 <strong>Ніколи не змінюй production сервер вручну.</strong> Зміни в code → новий AMI → deploy. Старий → terminate.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 28 — MUTABLE vs IMMUTABLE ПОРІВНЯННЯ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">28 / 45</span>
+  <h2>Mutable vs Immutable: порівняння</h2>
+  <table>
+    <tr><th>Параметр</th><th>Mutable</th><th>Immutable</th></tr>
+    <tr><td>Оновлення</td><td>Патч на живому сервері</td><td>Новий AMI + deploy</td></tr>
+    <tr><td>Відтворюваність</td><td><span class="tag-bad">❌ "Snowflake" servers</span></td><td><span class="tag-good">✅ Ідентичні копії</span></td></tr>
+    <tr><td>Rollback</td><td>Складно (reverse patch)</td><td><span class="tag-good">✅ Попередній AMI</span></td></tr>
+    <tr><td>Debugging</td><td>SSH → ручна діагностика</td><td>Logs → CloudWatch</td></tr>
+    <tr><td>Config drift</td><td><span class="tag-bad">❌ З часом накопичується</span></td><td><span class="tag-good">✅ Неможливий</span></td></tr>
+    <tr><td>Security</td><td>Тільки патчування</td><td><span class="tag-good">✅ Свіжий образ</span></td></tr>
+    <tr><td>Auto Scaling</td><td>Складніше</td><td><span class="tag-good">✅ Launch Template</span></td></tr>
+  </table>
+  <div class="note">🏆 Immutable — стандарт production cloud-native систем. Mutable — для legacy або dev середовищ.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 29 — GOLDEN IMAGE / AMI
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">29 / 45</span>
+  <h2>Golden Image / AMI</h2>
+  <pre><code class="language-text">
+Процес створення Golden AMI:
+
+1. Базовий AMI (Amazon Linux 2023, Ubuntu)
+          ↓
+2. Налаштування (Packer або ручно):
+   - OS updates + security patches
+   - Встановлення runtime (Java, Python, Node.js)
+   - Конфігурація агентів (CloudWatch, SSM, Datadog)
+   - Hardening (вимкнути непотрібні сервіси)
+          ↓
+3. Тестування образу
+          ↓
+4. Збереження як AMI (tagged: version, date, team)
+   ami-0a1b2c3d4e5f6a7b8 | name: myapp-v2.1.0-20240115
+          ↓
+5. Launch Template → Auto Scaling Group → Deploy
+  </code></pre>
+  <div class="note">💡 Інструмент для автоматизації: <strong>HashiCorp Packer</strong> — "terraform для images". Опис образу = код (JSON/HCL).</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 30 — STATELESS vs STATEFUL
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">30 / 45</span>
+  <h2>Stateless vs Stateful системи</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>🔄 Stateless</h4>
+      <ul>
+        <li>Сервер не зберігає стан між запитами</li>
+        <li>Будь-який сервер може обробити будь-який запит</li>
+        <li>Сесії/кеш → зовнішнє сховище (Redis, DynamoDB)</li>
+        <li>Легко масштабується горизонтально</li>
+        <li>Легко замінювати інстанси</li>
+      </ul>
+      <div style="margin-top:0.4em; color:var(--success);">✅ Cloud-native підхід</div>
+    </div>
+    <div class="box">
+      <h4>📌 Stateful</h4>
+      <ul>
+        <li>Сервер пам'ятає попередні запити</li>
+        <li>Сесії зберігаються локально</li>
+        <li>Файли / кеш на локальному диску</li>
+        <li>Sticky sessions (ALB)</li>
+        <li>Важко масштабувати та замінювати</li>
+      </ul>
+      <div style="margin-top:0.4em; color:var(--danger);">⚠️ Ускладнює Auto Scaling</div>
+    </div>
+  </div>
+  <div class="note">💡 Правило: HTTP сервери = stateless. БД, черги, кеш = stateful. Розділяй їх!</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 31 — DESIGNING STATELESS SERVICES
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">31 / 45</span>
+  <h2>Проектування stateless сервісів</h2>
+  <pre><code class="language-text">
+❌ Stateful (погано для cloud):            ✅ Stateless (cloud-native):
+
+  Client → EC2-1                             Client → ALB
+    EC2-1: session stored locally                   ↙    ↘
+    Client → EC2-2? → "session not found"      EC2-1    EC2-2
+                                              (обидва читають Redis)
+                                                   ↓
+                                                 Redis
+                                               (ElastiCache)
+
+  EC2-1 зберігає файли → /tmp/uploads         EC2-1 → S3 (спільне сховище)
+  EC2-2 не бачить файлів                       EC2-2 → S3 (те саме)
+
+  Конфіг: /etc/app/config.ini (локально)      Конфіг: AWS Parameter Store / Secrets Manager
+  </code></pre>
+  <div class="note">💡 <strong>12-Factor App</strong> принцип: зберігай стан у <em>зовнішніх</em> сервісах (S3, Redis, RDS), а не на диску сервера.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 32 — AWS EC2 INTRODUCTION
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">32 / 45</span>
+  <h2>AWS EC2: Introduction</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>🖥️ Що таке EC2?</h4>
+      <ul>
+        <li>Elastic Compute Cloud</li>
+        <li>VM у AWS (Nitro гіпервізор)</li>
+        <li>Вибір ОС через AMI</li>
+        <li>Вибір розміру через Instance Type</li>
+        <li>Запуск за секунди</li>
+        <li>Оплата за секунду (мінімум 60с)</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>⚙️ Компоненти при Launch</h4>
+      <ul>
+        <li><strong>AMI</strong> — образ ОС</li>
+        <li><strong>Instance Type</strong> — t3.micro, m6i.large...</li>
+        <li><strong>Key Pair</strong> — для SSH доступу</li>
+        <li><strong>Security Group</strong> — firewall правила</li>
+        <li><strong>VPC/Subnet</strong> — мережева розміщення</li>
+        <li><strong>Storage (EBS)</strong> — диск</li>
+        <li><strong>User Data</strong> — скрипт при старті</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">💡 EC2 = найфундаментальніший AWS сервіс. Розуміння EC2 = фундамент для решти.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 33 — EC2 INSTANCE FAMILIES
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">33 / 45</span>
+  <h2>EC2 Instance Families</h2>
+  <table>
+    <tr><th>Сімейство</th><th>Тип</th><th>Use Case</th><th>Приклади</th></tr>
+    <tr><td>T (Burstable)</td><td>General</td><td>Dev/test, low traffic</td><td>t3.micro, t4g.small</td></tr>
+    <tr><td>M (General)</td><td>Balanced</td><td>Web, app servers</td><td>m6i.large, m7g.xlarge</td></tr>
+    <tr><td>C (Compute)</td><td>CPU-opt.</td><td>CPU-intensive, ML inference</td><td>c6i.2xlarge, c7g</td></tr>
+    <tr><td>R (Memory)</td><td>RAM-opt.</td><td>In-memory DB, caching</td><td>r6g.4xlarge, r7i</td></tr>
+    <tr><td>I (Storage)</td><td>I/O-opt.</td><td>NoSQL, OLTP high IOPS</td><td>i3.xlarge, i4i</td></tr>
+    <tr><td>P/G (GPU)</td><td>GPU</td><td>ML training, graphics</td><td>p3.8xlarge, g5.2xlarge</td></tr>
+    <tr><td>Inf2</td><td>Inferentia</td><td>ML inference (AWS chip)</td><td>inf2.xlarge</td></tr>
+  </table>
+  <div class="note">💡 Суфікс: <code>i</code>=Intel, <code>a</code>=AMD, <code>g</code>=Graviton (ARM). Graviton (g) на ~40% дешевше і краща продуктивність/dollar.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 34 — EC2 INSTANCE SIZE NAMING
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">34 / 45</span>
+  <h2>EC2 Instance Type: розшифровка імені</h2>
+  <pre><code class="language-text">
+  m   6   i   .   2   xlarge
+  │   │   │       │   └── Розмір: nano, micro, small, medium, large, xlarge, 2/4/8/16xlarge
+  │   │   │       └────── Кількість кратних одиниць розміру
+  │   │   └────────────── Процесор: i=Intel, a=AMD, g=Graviton(ARM), n=Network opt.
+  │   └────────────────── Покоління (більше = новіше, краще, дешевше)
+  └────────────────────── Сімейство: m=General, c=Compute, r=RAM, p=GPU...
+
+Розміри та ресурси (m6i приклад):
+  m6i.nano    → 0.5 GB RAM, 1 vCPU   (dev/test)
+  m6i.micro   → 1 GB RAM,   1 vCPU
+  m6i.small   → 2 GB RAM,   2 vCPU
+  m6i.medium  → 4 GB RAM,   2 vCPU
+  m6i.large   → 8 GB RAM,   2 vCPU   (типовий prod)
+  m6i.xlarge  → 16 GB RAM,  4 vCPU
+  m6i.2xlarge → 32 GB RAM,  8 vCPU
+  </code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 35 — EC2 PURCHASING OPTIONS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">35 / 45</span>
+  <h2>EC2 Purchasing Options</h2>
+  <table>
+    <tr><th>Тип</th><th>Знижка</th><th>Зобов'язання</th><th>Переривання</th><th>Use Case</th></tr>
+    <tr><td>On-Demand</td><td>0%</td><td>Немає</td><td>Немає</td><td>Dev, нерегулярні, перший запуск</td></tr>
+    <tr><td>Reserved (1yr)</td><td>~40%</td><td>1 рік</td><td>Немає</td><td>Стабільне baseline навантаження</td></tr>
+    <tr><td>Reserved (3yr)</td><td>~60%</td><td>3 роки</td><td>Немає</td><td>Довгострокові стабільні сервіси</td></tr>
+    <tr><td>Savings Plans</td><td>до 66%</td><td>1–3 роки</td><td>Немає</td><td>Flexible (будь-який тип)</td></tr>
+    <tr><td>Spot</td><td>до 90%</td><td>Немає</td><td><span class="tag-warn">2хв попередження</span></td><td>Batch, ML, stateless fault-tolerant</td></tr>
+    <tr><td>Dedicated Host</td><td>—</td><td>On-demand/1yr</td><td>Немає</td><td>Compliance, BYOL ліцензії</td></tr>
+  </table>
+  <div class="note">💡 <strong>Стратегія:</strong> Baseline load → Reserved/Savings Plans. Спайки → On-Demand. Batch/ML → Spot.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 36 — SPOT INSTANCES
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">36 / 45</span>
+  <h2>Spot Instances: переваги та обмеження</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>✅ Spot Instances підходять для</h4>
+      <ul>
+        <li>ML training (checkpoint + resume)</li>
+        <li>Batch обробка (відео, аналітика)</li>
+        <li>Big data / EMR кластери</li>
+        <li>CI/CD build runners</li>
+        <li>Stateless веб-серери (за ASG)</li>
+        <li>Rendering (3D, відео)</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>❌ Spot Instances НЕ підходять для</h4>
+      <ul>
+        <li>Production бази даних</li>
+        <li>Stateful сервіси</li>
+        <li>Критичні API (якщо без fallback)</li>
+        <li>Задачі без checkpoint/recovery</li>
+        <li>Long-running транзакції</li>
+      </ul>
+    </div>
+  </div>
+  <pre style="margin-top:0.4em;"><code class="language-text">
+Spot interruption: AWS надсилає:
+  1. Interruption Notice  → 2 хвилини до termination
+  2. Instance Metadata: /latest/meta-data/spot/termination-time
+  → Твій код повинен перехопити і gracefully shutdown!
+  </code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 37 — AMI: AMAZON MACHINE IMAGE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">37 / 45</span>
+  <h2>AMI: Amazon Machine Image</h2>
+  <pre><code class="language-text">
+AMI містить:
+  ├── Root volume snapshot (EBS або Instance Store)
+  ├── Launch permissions (хто може запускати)
+  ├── Block device mapping (скільки/які диски при launch)
+  └── Metadata (архітектура, OS, virtualization type)
+</code></pre>
+  <div class="two-col" style="font-size:0.82em; margin-top:0.4em;">
+    <div class="box">
+      <h4>Типи AMI за джерелом</h4>
+      <ul>
+        <li><strong>AWS managed:</strong> Amazon Linux, Ubuntu Official</li>
+        <li><strong>AWS Marketplace:</strong> Bitnami, NGINX Plus, платні</li>
+        <li><strong>Community AMI:</strong> публічні від спільноти</li>
+        <li><strong>Your own:</strong> Golden Image, Create Image</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>Створення свого AMI</h4>
+      <pre><code class="language-bash">
+# Консоль: EC2 → Instance → Actions
+# → Image and templates → Create Image
+
+# AWS CLI:
+aws ec2 create-image \
+  --instance-id i-0a1b2c3d \
+  --name "myapp-v2.1.0-$(date +%Y%m%d)" \
+  --no-reboot
+      </code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 38 — AUTO SCALING GROUP
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">38 / 45</span>
+  <h2>Auto Scaling Group (ASG)</h2>
+  <pre><code class="language-text">
+                     ┌─────────────────────────────────┐
+Traffic ──► ALB      │        Auto Scaling Group        │
+            │        │                                  │
+            ├──────► │  EC2 (AZ-a) ● ● ●               │
+            ├──────► │  EC2 (AZ-b) ● ●                  │
+            └──────► │  EC2 (AZ-c) ●                    │
+                     │                                  │
+                     │  Min: 2    Desired: 6    Max: 20  │
+                     └─────────────────────────────────┘
+                                    ↑
+                          CloudWatch Alarm: CPU > 70%
+                               → Scale Out (+2)
+                          CloudWatch Alarm: CPU < 20%
+                               → Scale In (-1)
+  </code></pre>
+  <div class="note">💡 ASG завжди зберігає <strong>Desired capacity</strong> (заміняє terminated інстанси). Min = floor, Max = ceiling.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 39 — ASG SCALING POLICIES
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">39 / 45</span>
+  <h2>ASG Scaling Policies</h2>
+  <div class="three-col" style="font-size:0.82em;">
+    <div class="box">
+      <h4>🎯 Target Tracking</h4>
+      <p>Підтримувати метрику на заданому рівні.</p>
+      <pre><code class="language-text">
+CPU = 60%
+ALBRequestCount / target = 1000
+  </code></pre>
+      <p><span class="tag-good">✅ Найпростіший. Рекомендований.</span></p>
+    </div>
+    <div class="box">
+      <h4>📈 Step Scaling</h4>
+      <p>Крок масштабування залежить від розміру відхилення.</p>
+      <pre><code class="language-text">
+CPU 70–80% → +1
+CPU 80–90% → +2
+CPU > 90%  → +4
+  </code></pre>
+      <p><span class="tag-info">ℹ️ Більш гнучкий</span></p>
+    </div>
+    <div class="box">
+      <h4>🗓️ Scheduled Scaling</h4>
+      <p>За розкладом.</p>
+      <pre><code class="language-text">
+Пн-Пт 09:00 → min=5
+Пн-Пт 18:00 → min=2
+Чорна П'ятниця:
+  Min=50, Max=100
+  </code></pre>
+      <p><span class="tag-warn">⚠️ Треба знати патерн</span></p>
+    </div>
+  </div>
+  <div class="note">💡 <strong>Cooldown period</strong> (default 300с) — пауза між scaling подіями, щоб уникнути oscillation.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 40 — LAUNCH TEMPLATE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">40 / 45</span>
+  <h2>Launch Template</h2>
+  <pre><code class="language-json">
+{
+  "LaunchTemplateName": "myapp-lt-v2",
+  "LaunchTemplateData": {
+    "ImageId": "ami-0a1b2c3d4e5f6a7b8",
+    "InstanceType": "m6i.large",
+    "KeyName": "prod-key-pair",
+    "SecurityGroupIds": ["sg-0abc123def"],
+    "IamInstanceProfile": {
+      "Arn": "arn:aws:iam::123456789012:instance-profile/myapp-role"
+    },
+    "UserData": "IyEvYmluL2Jhc2gKZG5mIHVwZGF0ZSAteQ==",
+    "BlockDeviceMappings": [{
+      "DeviceName": "/dev/xvda",
+      "Ebs": {
+        "VolumeSize": 30,
+        "VolumeType": "gp3",
+        "Encrypted": true
+      }
+    }],
+    "MetadataOptions": {
+      "HttpTokens": "required"
+    }
+  }
+}
+  </code></pre>
+  <div class="note">💡 Launch Template = versioned конфіг EC2 інстансу. ASG посилається на конкретну версію. Зміна = нова версія.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 41 — EC2 METADATA SERVICE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">41 / 45</span>
+  <h2>EC2 Instance Metadata Service (IMDS)</h2>
+  <pre><code class="language-bash">
+# IMDS v2 (безпечніший — вимагає токен)
+TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+# Отримати інформацію про інстанс
+curl -s http://169.254.169.254/latest/meta-data/instance-id \
+  -H "X-aws-ec2-metadata-token: $TOKEN"
+# → i-0a1b2c3d4e5f6a7b8
+
+curl -s http://169.254.169.254/latest/meta-data/instance-type \
+  -H "X-aws-ec2-metadata-token: $TOKEN"
+# → m6i.large
+
+curl -s http://169.254.169.254/latest/meta-data/local-ipv4 \
+  -H "X-aws-ec2-metadata-token: $TOKEN"
+# → 10.0.1.42
+
+# IAM credentials (тимчасові!)
+curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/myapp-role
+  </code></pre>
+  <div class="note">⚠️ Завжди використовуй <strong>IMDSv2</strong>! IMDSv1 вразливий до SSRF атак. Вказуй <code>HttpTokens: required</code> у Launch Template.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 42 — SSM SESSION MANAGER
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">42 / 45</span>
+  <h2>AWS Systems Manager: Session Manager</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>Без Session Manager</h4>
+      <pre><code class="language-text">
+Bastion Host (jump server)
+    │ SSH (22/tcp відкрито!)
+    ↓
+ EC2 Private
+
+Проблеми:
+- Відкритий порт 22
+- Key management
+- Не логується
+- Нема MFA
+      </code></pre>
+    </div>
+    <div class="box">
+      <h4>З Session Manager</h4>
+      <pre><code class="language-bash">
+# Порт 22 ЗАКРИТИЙ!
+# Підключення через AWS API
+
+# CLI
+aws ssm start-session \
+  --target i-0a1b2c3d
+
+# Console:
+# EC2 → Connect → Session Manager
+
+# Переваги:
+# ✅ Лог кожної сесії
+# ✅ IAM контроль
+# ✅ Нема SSH ключів
+# ✅ MFA підтримка
+      </code></pre>
+    </div>
+  </div>
+  <div class="note">💡 Session Manager = сучасний стандарт доступу до EC2. Security > зручність SSH.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 43 — ANTI-PATTERNS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">43 / 45</span>
+  <h2>Anti-Patterns: Що НЕ робити</h2>
+  <div class="two-col" style="font-size:0.82em;">
+    <div>
+      <h3 style="font-size:0.9em; color:var(--danger);">❌ EC2 помилки</h3>
+      <ul>
+        <li>SSH на порт 22 відкритий для 0.0.0.0/0</li>
+        <li>Root EC2 user для застосунку</li>
+        <li>Hardcoded AWS credentials у коді</li>
+        <li>Один EC2 без ASG (SPOF)</li>
+        <li>Mutable сервери в production</li>
+        <li>Залишати зупинені EC2 (рахує EBS!)</li>
+        <li>t2.micro у production під навантаженням</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="font-size:0.9em; color:var(--danger);">❌ Linux помилки</h3>
+      <ul>
+        <li>Запускати застосунок від root</li>
+        <li>Зберігати secrets у /etc як plain text</li>
+        <li>Не налаштовувати firewall (iptables/nftables)</li>
+        <li>Ігнорувати security updates</li>
+        <li>Зберігати стан у /tmp (ephemeral!)</li>
+        <li>Не ротувати логи (переповнення диску)</li>
+        <li>Захардкодити паролі у bash скриптах</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 44 — ПРАКТИЧНЕ ЗАВДАННЯ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">44 / 45</span>
+  <h2>Практичне завдання (Lab 2)</h2>
+  <div style="font-size:0.85em;">
+    <p><strong>Мета:</strong> Розгорнути автомасштабовану веб-аплікацію на EC2.</p>
+    <ol>
+      <li>Запустити EC2 <strong>Amazon Linux 2023</strong>, тип <code>t3.micro</code></li>
+      <li>Via <strong>User Data</strong> встановити nginx і відобразити hostname</li>
+      <li>Перевірити:
+        <ul>
+          <li><code>systemctl status nginx</code> — running</li>
+          <li><code>curl http://localhost</code> — сторінка</li>
+          <li><code>ss -tlnp | grep 80</code> — слухає порт 80</li>
+        </ul>
+      </li>
+      <li>Створити <strong>AMI</strong> з цього інстансу</li>
+      <li>Створити <strong>Launch Template</strong> з цим AMI</li>
+      <li>Налаштувати <strong>ASG</strong>: min=1, desired=2, max=4</li>
+      <li>Додати <strong>Target Tracking</strong> policy: CPU = 60%</li>
+      <li>Перевірити що обидва інстанси відповідають</li>
+    </ol>
+    <div class="note">📋 Здати: screenshots Console + команди з результатами в README.md</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 45 — НАСТУПНА ЛЕКЦІЯ
+════════════════════════════════════════════════════════════ -->
+<section class="title-slide">
+  <span class="slide-num">45 / 45</span>
+  <h2 style="color:#ecf0f1;">Дякую за увагу!</h2>
+  <hr style="border-color:#555; margin:0.8em auto; width:50%;"/>
+  <h3 style="color:var(--accent); margin-top:0.8em;">Наступна лекція 6:</h3>
+  <h2 style="font-size:1.1em;">Зберігання даних та життєвий цикл</h2>
+  <div class="box" style="max-width:480px; margin:1em auto; text-align:left;">
+    <ul style="font-size:0.85em;">
+      <li>Object vs Block vs File Storage</li>
+      <li>Amazon S3: класи, lifecycle, versioning</li>
+      <li>EBS та EFS в деталях</li>
+      <li>CAP теорема та CAP у AWS</li>
+      <li>GDPR та data residency</li>
+    </ul>
+  </div>
+  <p style="color:var(--muted); font-size:0.75em; margin-top:0.8em;">
+    Підготовка: пригадайте поняття файлових систем та RAID
+  </p>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: false,
+    transition: 'slide',
+    transitionSpeed: 'fast',
+    controls: true,
+    progress: true,
+    center: false,
+    width: 1750,
+    height: 900,
+    margin: 0.03,
+    minScale: 0.2,
+    maxScale: 2.0,
+    plugins: [ RevealHighlight, RevealNotes ]
+  });
+</script>
+</body>
+</html>

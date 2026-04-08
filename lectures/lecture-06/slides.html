@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Лекція 6 — Зберігання даних та життєвий цикл</title>
+
+  <!-- Reveal.js CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <!-- Syntax highlighting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+
+  <style>
+    :root {
+      --accent: #f39c12;
+      --success: #2ecc71;
+      --danger: #e74c3c;
+      --info: #3498db;
+      --muted: #95a5a6;
+    }
+
+    /* Base font reduced so slide content fits at 1920×1080 */
+    .reveal { font-size: 34px; }
+
+    .reveal h1, .reveal h2 { color: var(--accent); }
+    .reveal h3 { color: #ecf0f1; }
+
+    .reveal section { text-align: left; }
+    .reveal .title-slide { text-align: center; }
+
+    /* Tighter heading margins */
+    .reveal h2 { margin: 0 0 0.3em; font-size: 1.2em; }
+    .reveal h3 { margin: 0 0 0.25em; font-size: 0.95em; }
+
+    .reveal pre { font-size: 0.50em; box-shadow: none; margin: 0.3em 0; }
+    .reveal code { font-size: 0.72em; }
+    .reveal table { font-size: 0.68em; width: 100%; }
+    .reveal table th { background: #2c3e50; color: var(--accent); }
+    .reveal table td, .reveal table th { border: 1px solid #444; padding: 4px 8px; }
+
+    /* Allow per-slide vertical scroll when content still overflows */
+    .reveal .slides section {
+      overflow-y: auto;
+      max-height: 100%;
+      box-sizing: border-box;
+    }
+
+    .tag-good  { color: var(--success); font-weight: bold; }
+    .tag-bad   { color: var(--danger);  font-weight: bold; }
+    .tag-warn  { color: var(--accent);  font-weight: bold; }
+    .tag-info  { color: var(--info);    font-weight: bold; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.68em;
+      font-weight: bold;
+      margin: 2px;
+    }
+    .pill-orange { background: #e67e22; }
+    .pill-blue   { background: #2980b9; }
+    .pill-green  { background: #27ae60; }
+    .pill-gray   { background: #7f8c8d; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7em;
+    }
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.6em;
+    }
+
+    .box {
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 0.4em 0.8em;
+      background: rgba(255,255,255,0.05);
+      font-size: 0.76em;
+    }
+    .box h4 { margin: 0 0 0.3em; color: var(--accent); font-size: 0.95em; }
+
+    .note {
+      border-left: 4px solid var(--accent);
+      padding: 0.3em 0.7em;
+      background: rgba(243,156,18,0.1);
+      font-size: 0.70em;
+      margin-top: 0.4em;
+    }
+    .slide-num {
+      position: absolute;
+      top: 8px;
+      right: 14px;
+      font-size: 0.44em;
+      color: #666;
+    }
+
+    /* lifecycle bar */
+    .lc-bar {
+      display: flex;
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 0.65em;
+      margin: 0.4em 0;
+    }
+    .lc-bar div {
+      padding: 6px 10px;
+      flex: 1;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    ul li { margin-bottom: 0.18em; }
+    ol li  { margin-bottom: 0.18em; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 1 — TITLE
+════════════════════════════════════════════════════════════ -->
+<section class="title-slide">
+  <h1 style="font-size:1.6em;">Лекція 6</h1>
+  <h2 style="font-size:1.3em; color:#ecf0f1;">Зберігання даних<br>та життєвий цикл</h2>
+  <hr style="border-color:#555; margin:1em auto; width:60%;" />
+  <p style="color:var(--muted); font-size:0.8em;">
+    Курс «Хмарні технології інформаційних систем»<br>
+    Бакалавр ІТ · 3 курс · 2 години
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 2 — AGENDA
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">2 / 45</span>
+  <h2>Agenda</h2>
+  <div class="two-col" style="font-size:0.82em;">
+    <ol>
+      <li>Типи зберігання даних</li>
+      <li>Object Storage (S3) в деталях</li>
+      <li>S3 Storage Classes</li>
+      <li>Data Lifecycle</li>
+      <li>S3 Versioning &amp; Replication</li>
+      <li>S3 Presigned URLs &amp; Access Points</li>
+      <li>S3 Event Notifications</li>
+      <li>Block Storage — EBS</li>
+      <li>EBS Snapshots &amp; Performance</li>
+      <li>File Storage — EFS &amp; FSx</li>
+      <li>AWS Storage Gateway</li>
+    </ol>
+    <ol start="12">
+      <li>AWS Snow Family</li>
+      <li>AWS Backup Service</li>
+      <li>Backup vs Archive</li>
+      <li>CAP Теорема</li>
+      <li>GDPR та Data Residency</li>
+      <li>Security: шифрування, доступ</li>
+      <li>Моніторинг Storage</li>
+      <li>Cost Optimization</li>
+      <li>Real-world кейс</li>
+      <li>Anti-patterns &amp; Checklist</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 3 — ДЕ ЖИВУТЬ ДАНІ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">3 / 45</span>
+  <h2>Де живуть ваші дані?</h2>
+  <div class="three-col" style="margin-top:0.8em;">
+    <div class="box">
+      <h4>📦 Object Storage</h4>
+      <ul>
+        <li>AWS S3</li>
+        <li>GCS, Azure Blob</li>
+        <li>HTTP REST API</li>
+        <li>∞ масштаб</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>💾 Block Storage</h4>
+      <ul>
+        <li>AWS EBS</li>
+        <li>SAN, NVMe</li>
+        <li>iSCSI протокол</li>
+        <li>Низька latency</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>📂 File Storage</h4>
+      <ul>
+        <li>AWS EFS / FSx</li>
+        <li>NFS, SMB</li>
+        <li>Shared filesystem</li>
+        <li>Multi-instance</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">💡 Вибір типу storage = архітектурне рішення. Змінити потім дорого.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 4 — ПОРІВНЯННЯ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">4 / 45</span>
+  <h2>Object / Block / File — порівняння</h2>
+  <table>
+    <tr><th>Критерій</th><th>Object (S3)</th><th>Block (EBS)</th><th>File (EFS)</th></tr>
+    <tr><td>Протокол</td><td>HTTP / REST</td><td>iSCSI / NVMe</td><td>NFS / SMB</td></tr>
+    <tr><td>Метадані</td><td>Багаті (custom)</td><td>Мінімальні</td><td>Обмежені</td></tr>
+    <tr><td>Scalability</td><td>∞ необмежена</td><td>До 64TiB/vol</td><td>Петабайти</td></tr>
+    <tr><td>Latency</td><td>Мілісекунди</td><td>Sub-мс</td><td>Мілісекунди</td></tr>
+    <tr><td>Access</td><td>Concurrent ∞</td><td>1 instance</td><td>Concurrent ∞</td></tr>
+    <tr><td>Use case</td><td>Backup/CDN/Data lake</td><td>DB/OS disk</td><td>CMS/ML/CI</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 5 — КОЛИ ЩО
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">5 / 45</span>
+  <h2>Коли що використовувати?</h2>
+  <pre><code class="language-text">
+Потрібен shared доступ між EC2 instances?
+  └─► File Storage (EFS або FSx)
+
+Потрібна БД або диск для операційної системи?
+  └─► Block Storage (EBS)
+
+Файли, бекапи, статичний контент, логи, великі дані?
+  └─► Object Storage (S3)
+
+Дані на edge / офлайн-перенос петабайт до хмари?
+  └─► Snow Family (Snowball / Snowmobile)
+
+Зʼєднати on-premises з хмарою?
+  └─► Storage Gateway
+  </code></pre>
+  <div class="note">💡 90% cloud workloads = S3 + EBS combo</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 6 — OBJECT STORAGE КОНЦЕПЦІЯ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">6 / 45</span>
+  <h2>Object Storage: ключова концепція</h2>
+  <pre><code class="language-text">
+Bucket: my-app-data   (глобально унікальна назва)
+  │
+  ├── Key: logs/2024/01/app.log   → Binary Object + Metadata
+  ├── Key: images/logo.png        → Binary Object + Metadata
+  └── Key: backups/db-2024-01.sql → Binary Object + Metadata
+
+Metadata (системна):           Metadata (custom):
+  Content-Type: image/png        environment: production
+  Content-Length: 48291          team: backend
+  ETag: "abc123..."              project: auth-service
+  </code></pre>
+  <ul style="font-size:0.82em;">
+    <li>Плоска namespace — ієрархія є <em>ілюзією</em> (префікс у ключі)</li>
+    <li>Унікальний ключ в межах bucket</li>
+    <li>HTTP endpoint для кожного об'єкта</li>
+    <li>Об'єкти незмінні (overwrite = нова версія)</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 7 — S3 STORAGE CLASSES
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">7 / 45</span>
+  <h2>S3 Storage Classes</h2>
+  <table>
+    <tr><th>Клас</th><th>Доступність</th><th>Latency</th><th>Вартість/GB</th><th>Мінімум</th></tr>
+    <tr><td>🔥 Standard</td><td>99.99%</td><td>мс</td><td>$0.023</td><td>—</td></tr>
+    <tr><td>🌡 Standard-IA</td><td>99.9%</td><td>мс</td><td>$0.0125</td><td>30 днів</td></tr>
+    <tr><td>❄️ One Zone-IA</td><td>99.5%</td><td>мс</td><td>$0.01</td><td>30 днів</td></tr>
+    <tr><td>🧊 Glacier Instant</td><td>99.9%</td><td>мс</td><td>$0.004</td><td>90 днів</td></tr>
+    <tr><td>🏔️ Glacier Flexible</td><td>99.99%</td><td>хв–год</td><td>$0.0036</td><td>90 днів</td></tr>
+    <tr><td>⛰️ Glacier Deep</td><td>99.99%</td><td>год</td><td>$0.00099</td><td>180 днів</td></tr>
+    <tr><td>🧠 Intelligent-Tiering</td><td>99.9%</td><td>мс</td><td>авто</td><td>—</td></tr>
+  </table>
+  <div class="note">Ціни орієнтовні (us-east-1, 2024). Порівнюйте на <a href="https://aws.amazon.com/s3/pricing/" style="color:#3498db;">aws.amazon.com/s3/pricing</a></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 8 — COST VS ACCESS (GRAPHICAL)
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">8 / 45</span>
+  <h2>S3 Storage Classes: Cost vs Access</h2>
+  <div style="font-size:0.85em; margin:0.5em 0;">Вартість зберігання ↓ / Час відновлення →</div>
+  <div style="display:flex; flex-direction:column; gap:6px; font-size:0.76em;">
+    <div style="background:#e74c3c; padding:8px 14px; border-radius:4px; width:98%;">
+      🔥 <strong>Standard</strong> — $0.023/GB — миттєво
+    </div>
+    <div style="background:#e67e22; padding:8px 14px; border-radius:4px; width:80%;">
+      🌡 <strong>Standard-IA</strong> — $0.0125/GB — миттєво (+ retrieval fee)
+    </div>
+    <div style="background:#f39c12; padding:8px 14px; border-radius:4px; width:62%; color:#000;">
+      🧊 <strong>Glacier Instant</strong> — $0.004/GB — мілісекунди
+    </div>
+    <div style="background:#27ae60; padding:8px 14px; border-radius:4px; width:44%;">
+      🏔️ <strong>Glacier Flexible</strong> — $0.0036/GB — хвилини–години
+    </div>
+    <div style="background:#2980b9; padding:8px 14px; border-radius:4px; width:30%;">
+      ⛰️ <strong>Glacier Deep</strong> — $0.00099/GB — 12+ годин
+    </div>
+  </div>
+  <div class="note">Glacier Deep Archive — найдешевший storage у AWS, ідеальний для compliance-архівів</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 9 — DATA LIFECYCLE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">9 / 45</span>
+  <h2>Data Lifecycle: Hot → Warm → Cold</h2>
+  <div class="lc-bar">
+    <div style="background:#e74c3c;">🔥 Hot<br><small>0–30 днів</small><br><small>Standard</small></div>
+    <div style="background:#e67e22;">🌡 Warm<br><small>30–90 днів</small><br><small>Standard-IA</small></div>
+    <div style="background:#2980b9;">❄️ Cold<br><small>90–365 днів</small><br><small>Glacier</small></div>
+    <div style="background:#27ae60;">🌿 Archive<br><small>365д – 7 р</small><br><small>Deep Archive</small></div>
+    <div style="background:#7f8c8d;">🗑️ Delete<br><small>&gt;7 років</small><br><small>або compliance</small></div>
+  </div>
+  <pre><code class="language-json">{
+  "Rules": [{
+    "Status": "Enabled",
+    "Filter": { "Prefix": "logs/" },
+    "Transitions": [
+      { "Days": 30,  "StorageClass": "STANDARD_IA" },
+      { "Days": 90,  "StorageClass": "GLACIER" },
+      { "Days": 365, "StorageClass": "DEEP_ARCHIVE" }
+    ],
+    "Expiration": { "Days": 2555 }
+  }]
+}</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 10 — S3 VERSIONING
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">10 / 45</span>
+  <h2>S3 Versioning</h2>
+  <pre><code class="language-text">
+Без versioning:
+  PUT logo.png  →  перезаписує попередній (дані втрачені)
+
+З versioning:
+  PUT logo.png  → VersionId: "abc123"  (v1)
+  PUT logo.png  → VersionId: "def456"  (v2)
+  PUT logo.png  → VersionId: "ghi789"  (v3, current)
+
+  GET logo.png                     → v3 (latest)
+  GET logo.png?versionId=abc123    → v1
+  DELETE logo.png                  → delete marker (не видаляє!)
+  DELETE logo.png?versionId=abc123 → видаляє v1 назавжди
+  </code></pre>
+  <div class="two-col" style="font-size:0.8em;">
+    <div class="box">
+      <h4>✅ Захист від</h4>
+      <ul>
+        <li>Випадкового видалення</li>
+        <li>Людської помилки</li>
+        <li>Ransomware</li>
+        <li>Пошкодження даних</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>⚠️ Пам'ятати</h4>
+      <ul>
+        <li>Всі версії = більше storage</li>
+        <li>Lifecycle для старих версій</li>
+        <li>MFA Delete для extra protection</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 11 — S3 REPLICATION
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">11 / 45</span>
+  <h2>S3 Replication</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>🌍 Cross-Region Replication (CRR)</h4>
+      <ul>
+        <li>Різні AWS регіони</li>
+        <li>DR та disaster recovery</li>
+        <li>Latency reduction для global users</li>
+        <li>Compliance (дублювання)</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>📍 Same-Region Replication (SRR)</h4>
+      <ul>
+        <li>Один AWS регіон</li>
+        <li>Агрегація логів в один bucket</li>
+        <li>Тест/dev копія production даних</li>
+        <li>Account-to-account copy</li>
+      </ul>
+    </div>
+  </div>
+  <pre style="margin-top:0.6em;"><code class="language-text">
+Вимоги для реплікації:
+  ✅ Versioning увімкнено на source і destination
+  ✅ IAM роль з відповідними дозволами
+  ✅ Шифрування? → Треба дозвіл на KMS
+  ⚠️ Вже існуючі об'єкти НЕ реплікуються автоматично
+     (потрібен S3 Batch Replication)
+  </code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 12 — S3 PRESIGNED URLS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">12 / 45</span>
+  <h2>S3 Presigned URLs</h2>
+  <pre><code class="language-python">
+# Генерація Presigned URL (Python / boto3)
+import boto3
+
+s3 = boto3.client('s3')
+
+# Дозволити ЗАВАНТАЖЕННЯ файлу (GET)
+url = s3.generate_presigned_url(
+    'get_object',
+    Params={'Bucket': 'my-bucket', 'Key': 'report.pdf'},
+    ExpiresIn=3600   # 1 година
+)
+# → https://my-bucket.s3.amazonaws.com/report.pdf?X-Amz-Signature=...
+
+# Дозволити ВИВАНТАЖЕННЯ файлу (PUT)
+url = s3.generate_presigned_url(
+    'put_object',
+    Params={'Bucket': 'my-bucket', 'Key': 'upload/file.csv'},
+    ExpiresIn=300    # 5 хвилин
+)
+  </code></pre>
+  <div class="note">
+    💡 Presigned URLs: тимчасовий доступ без AWS credentials. Ідеально для file upload із frontend або sharing приватних файлів.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 13 — S3 EVENT NOTIFICATIONS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">13 / 45</span>
+  <h2>S3 Event Notifications</h2>
+  <pre><code class="language-text">
+S3 Bucket
+  │
+  ├── Подія: s3:ObjectCreated:*  →  Lambda (обробка зображень)
+  ├── Подія: s3:ObjectCreated:*  →  SQS    (черга задач)
+  ├── Подія: s3:ObjectRemoved:*  →  SNS    (сповіщення)
+  └── Подія: s3:ObjectCreated:*  →  EventBridge (будь-який сервіс)
+  </code></pre>
+  <div class="two-col" style="font-size:0.82em;">
+    <div class="box">
+      <h4>Типові use cases</h4>
+      <ul>
+        <li>Resize зображень при upload</li>
+        <li>Транскодування відео</li>
+        <li>ETL при появі нових файлів</li>
+        <li>Аудит видалення об'єктів</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>Паттерн: Event-driven pipeline</h4>
+      <ul>
+        <li>User upload → S3</li>
+        <li>S3 event → SQS</li>
+        <li>Lambda читає з SQS</li>
+        <li>Результат → інший S3</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 14 — S3 ACCESS POINTS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">14 / 45</span>
+  <h2>S3 Access Points</h2>
+  <pre><code class="language-text">
+Без Access Points:                  З Access Points:
+  Один складний Bucket Policy         Окремий endpoint для кожної команди
+  ↓
+  s3://shared-data-bucket             s3://arn:aws:s3:us-east-1:123456:
+                                          accesspoint/analytics-team
+  IAM policy: 200 рядків               IAM policy: 15 рядків (clean!)
+
+  Analytics Team ─────────────────────► analytics-ap/data/
+  ML Team ────────────────────────────► ml-ap/models/
+  Finance Team ───────────────────────► finance-ap/reports/
+  </code></pre>
+  <ul style="font-size:0.82em;">
+    <li>Кожен Access Point має власну <strong>network policy</strong> (VPC only або internet)</li>
+    <li>Спрощує управління доступом для великих shared buckets</li>
+    <li>Multi-Region Access Points → автоматичний routing до найближчого bucket</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 15 — BLOCK STORAGE EBS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">15 / 45</span>
+  <h2>Block Storage: EBS</h2>
+  <pre><code class="language-text">
+EC2 Instance
+  ├── /dev/xvda  Root Volume  (gp3, 20GB)   ← OS, обов'язковий
+  ├── /dev/xvdb  Data Volume  (gp3, 500GB)  ← База даних
+  └── /dev/xvdc  Log Volume   (st1, 2TB)    ← Логи (throughput)
+  </code></pre>
+  <table style="margin-top:0.5em;">
+    <tr><th>Тип</th><th>IOPS</th><th>Throughput</th><th>Latency</th><th>Use case</th></tr>
+    <tr><td>gp3</td><td>до 16,000</td><td>1,000 MB/s</td><td>мс</td><td>General purpose, default</td></tr>
+    <tr><td>io2 Block Express</td><td>до 256,000</td><td>4,000 MB/s</td><td>&lt;1мс</td><td>Critical DB (Oracle, SAP)</td></tr>
+    <tr><td>st1</td><td>Throughput opt.</td><td>500 MB/s</td><td>мс</td><td>Big data, log processing</td></tr>
+    <tr><td>sc1</td><td>Cold HDD</td><td>250 MB/s</td><td>мс</td><td>Rarely accessed data</td></tr>
+  </table>
+  <div class="note">💡 gp3 = gp2 + 20% дешевше + незалежне налаштування IOPS/throughput</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 16 — EBS VS INSTANCE STORE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">16 / 45</span>
+  <h2>EBS vs Instance Store</h2>
+  <table>
+    <tr><th>Параметр</th><th>EBS</th><th>Instance Store</th></tr>
+    <tr><td>Тип</td><td>Network-attached</td><td>Physically attached (NVMe)</td></tr>
+    <tr><td>Persistence</td><td><span class="tag-good">✅ Постійний</span></td><td><span class="tag-bad">❌ Ephemeral</span></td></tr>
+    <tr><td>Stop/Start EC2</td><td><span class="tag-good">✅ Дані збережені</span></td><td><span class="tag-bad">❌ Дані втрачені</span></td></tr>
+    <tr><td>Snapshot</td><td><span class="tag-good">✅ Підтримується</span></td><td><span class="tag-bad">❌ Недоступно</span></td></tr>
+    <tr><td>Performance</td><td>⚡ Висока</td><td>⚡⚡ Вища (локальна NVMe)</td></tr>
+    <tr><td>Вартість</td><td>💰 Окрема оплата</td><td>🆓 Включена в EC2</td></tr>
+    <tr><td>Розмір</td><td>До 64 TiB</td><td>Фіксований (тип інстансу)</td></tr>
+  </table>
+  <div class="note">⚠️ <strong>Правило:</strong> Stateful дані → EBS. Тимчасовий кеш / scratch space → Instance Store.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 17 — EBS SNAPSHOTS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">17 / 45</span>
+  <h2>EBS Snapshots</h2>
+  <pre><code class="language-text">
+Інкрементальна модель:
+
+  Snapshot 1 (повний):    ████████████████████  20 GB
+  Snapshot 2 (інкрем.):   ████                   3 GB  (зміни після snap 1)
+  Snapshot 3 (інкрем.):   ██                     1 GB  (зміни після snap 2)
+  ─────────────────────────────────────────────────────
+  Всього збережено: 24 GB    (не 60 GB!)
+  </code></pre>
+  <div class="two-col" style="font-size:0.82em;">
+    <div class="box">
+      <h4>Snapshot workflow</h4>
+      <pre><code class="language-bash">
+# Створити snapshot
+aws ec2 create-snapshot \
+  --volume-id vol-0a1b2c3d \
+  --description "Pre-deploy backup"
+
+# Відновити новий volume
+aws ec2 create-volume \
+  --snapshot-id snap-0a1b2c3d \
+  --availability-zone us-east-1a
+      </code></pre>
+    </div>
+    <div class="box">
+      <h4>Можливості</h4>
+      <ul>
+        <li>Копіювання між regions</li>
+        <li>Основа для AMI</li>
+        <li>Encryption при відновленні</li>
+        <li>Amazon Data Lifecycle Manager (автоматизація)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 18 — EBS PERFORMANCE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">18 / 45</span>
+  <h2>EBS Performance Optimization</h2>
+  <div class="two-col">
+    <div>
+      <h3 style="font-size:0.9em;">Проблеми</h3>
+      <ul style="font-size:0.8em;">
+        <li><strong>I/O bottleneck:</strong> EC2 instance може мати більший throughput, ніж EBS</li>
+        <li><strong>IOPS limit:</strong> gp2 = 3 IOPS/GB (max 16k)</li>
+        <li><strong>Multi-attach:</strong> тільки io1/io2, обмежено</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="font-size:0.9em;">Оптимізація</h3>
+      <ul style="font-size:0.8em;">
+        <li><strong>gp3 незалежно налаштовує</strong> IOPS і throughput</li>
+        <li><strong>RAID 0:</strong> кілька EBS volumes для більшого throughput</li>
+        <li><strong>EBS Optimized instances:</strong> виділений bandwidth</li>
+        <li><strong>Nitro instances:</strong> менше overhead</li>
+      </ul>
+    </div>
+  </div>
+  <pre style="margin-top:0.5em;"><code class="language-bash">
+# Збільшити IOPS без downtime (gp3)
+aws ec2 modify-volume \
+  --volume-id vol-0a1b2c3d \
+  --volume-type gp3 \
+  --iops 6000 \
+  --throughput 300
+  </code></pre>
+  <div class="note">💡 EBS модифікації можна робити <strong>без зупинки EC2</strong> (Elastic Volumes)</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 19 — FILE STORAGE EFS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">19 / 45</span>
+  <h2>File Storage: EFS та FSx</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>📂 Amazon EFS</h4>
+      <ul>
+        <li>NFS v4 протокол</li>
+        <li>Multi-AZ автоматично</li>
+        <li>Elastic (росте автоматично)</li>
+        <li>Linux workloads</li>
+        <li>Performance modes:<br>
+          — General Purpose<br>
+          — Max I/O</li>
+        <li>Throughput modes:<br>
+          — Bursting / Provisioned / Elastic</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>📁 Amazon FSx</h4>
+      <ul>
+        <li><strong>FSx for Windows:</strong> SMB, Active Directory</li>
+        <li><strong>FSx for Lustre:</strong> HPC, ML, high throughput</li>
+        <li><strong>FSx for NetApp ONTAP:</strong> enterprise NAS</li>
+        <li><strong>FSx for OpenZFS:</strong> Linux/Unix</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">FSx for Lustre: до 1 TB/s throughput для ML/AI workloads</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 20 — AWS STORAGE GATEWAY
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">20 / 45</span>
+  <h2>AWS Storage Gateway</h2>
+  <pre><code class="language-text">
+On-Premises Data Center          AWS Cloud
+────────────────────────         ────────────────────────
+                         [VPN/DX]
+  Application Server ──────────► S3 File Gateway → S3
+  Backup Software    ──────────► Tape Gateway    → Glacier
+  DB Server          ──────────► Volume Gateway  → EBS Snapshots
+</code></pre>
+  <div class="three-col" style="font-size:0.78em; margin-top:0.5em;">
+    <div class="box">
+      <h4>S3 File Gateway</h4>
+      <p>NFS/SMB доступ до S3. Кеш на local disk для часто використовуваних даних.</p>
+    </div>
+    <div class="box">
+      <h4>Tape Gateway</h4>
+      <p>Замінює фізичні стрічки. Virtual Tape Library → Glacier Deep Archive.</p>
+    </div>
+    <div class="box">
+      <h4>Volume Gateway</h4>
+      <p>iSCSI volumes. Cached mode або Stored mode. Snapshots → EBS.</p>
+    </div>
+  </div>
+  <div class="note">💡 Storage Gateway = гібридна хмара. Поступова міграція без зміни існуючих застосунків.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 21 — AWS SNOW FAMILY
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">21 / 45</span>
+  <h2>AWS Snow Family</h2>
+  <div class="three-col" style="font-size:0.8em;">
+    <div class="box">
+      <h4>❄️ Snowcone</h4>
+      <ul>
+        <li>8 TB storage</li>
+        <li>4 GB RAM, 2 vCPU</li>
+        <li>Легкий (2.1 кг)</li>
+        <li>Drone delivery можливий</li>
+        <li>Edge computing</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>🏔️ Snowball Edge</h4>
+      <ul>
+        <li>80 TB storage</li>
+        <li>Compute-optimized або Storage-optimized</li>
+        <li>ML inference на edge</li>
+        <li>Типово: &lt;10 PB міграція</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>🚚 Snowmobile</h4>
+      <ul>
+        <li>100 PB storage</li>
+        <li>Фізична вантажівка</li>
+        <li>Datacenter migration</li>
+        <li>Для гігантів індустрії</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">
+    💡 <strong>Правило thumb:</strong> Якщо upload через інтернет займає &gt; 1 тижня → розглянь Snow Family.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 22 — AWS BACKUP
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">22 / 45</span>
+  <h2>AWS Backup Service</h2>
+  <pre><code class="language-text">
+AWS Backup — централізоване керування backup для:
+  EBS Volumes    │  RDS (MySQL, PostgreSQL, Aurora)
+  EFS            │  DynamoDB
+  FSx            │  EC2 instances
+  S3             │  VMware Cloud on AWS
+</code></pre>
+  <div class="two-col" style="font-size:0.8em; margin-top:0.5em;">
+    <div class="box">
+      <h4>Backup Plan (приклад)</h4>
+      <pre><code class="language-json">{
+  "Rules": [
+    {
+      "RuleName": "DailyBackup",
+      "ScheduleExpression": "cron(0 5 * * ? *)",
+      "StartWindowMinutes": 60,
+      "DeleteAfterDays": 35,
+      "MoveToColdStorageAfterDays": 30
+    }
+  ]
+}</code></pre>
+    </div>
+    <div class="box">
+      <h4>Переваги</h4>
+      <ul>
+        <li>Один інтерфейс для всіх сервісів</li>
+        <li>Backup policies (tag-based)</li>
+        <li>Cross-region та cross-account</li>
+        <li>Compliance reporting</li>
+        <li>WORM (Write Once Read Many)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 23 — BACKUP VS ARCHIVE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">23 / 45</span>
+  <h2>Backup vs Archive</h2>
+  <table>
+    <tr><th>Параметр</th><th>Backup</th><th>Archive</th></tr>
+    <tr><td>Мета</td><td>Відновлення після збою</td><td>Довгострокове зберігання</td></tr>
+    <tr><td>RPO</td><td>Години / дні</td><td>Не актуально</td></tr>
+    <tr><td>RTO</td><td>Хвилини / години</td><td>Години / дні</td></tr>
+    <tr><td>Термін</td><td>Тижні / місяці</td><td>Роки / десятиліття</td></tr>
+    <tr><td>Вартість</td><td>Середня</td><td>Дуже низька</td></tr>
+    <tr><td>Access frequency</td><td>Можливо регулярно</td><td>Рідко або ніколи</td></tr>
+    <tr><td>AWS сервіс</td><td>AWS Backup, EBS Snapshots</td><td>S3 Glacier Deep Archive</td></tr>
+  </table>
+  <div class="note">
+    ⚠️ <strong>Ключова різниця:</strong> Backup — плануєте використовувати. Archive — compliance/legal.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 24 — CAP ТЕОРЕМА
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">24 / 45</span>
+  <h2>CAP Теорема</h2>
+  <div class="two-col">
+    <div style="text-align:center; padding:1em;">
+      <svg width="260" height="220" viewBox="0 0 260 220">
+        <!-- triangle -->
+        <polygon points="130,10 10,210 250,210" fill="none" stroke="#555" stroke-width="2"/>
+        <!-- labels -->
+        <text x="120" y="8" fill="#f39c12" font-size="13" text-anchor="middle">Consistency</text>
+        <text x="5"   y="225" fill="#3498db" font-size="13">Availability</text>
+        <text x="195" y="225" fill="#2ecc71" font-size="13">Partition Tolerance</text>
+        <!-- zones -->
+        <text x="60"  y="160" fill="#aaa" font-size="11">CA</text>
+        <text x="130" y="80"  fill="#aaa" font-size="11">CP</text>
+        <text x="185" y="160" fill="#aaa" font-size="11">AP</text>
+        <!-- note -->
+        <text x="130" y="200" fill="#e74c3c" font-size="10" text-anchor="middle">P — завжди в мережі!</text>
+      </svg>
+    </div>
+    <div style="font-size:0.8em;">
+      <div class="box" style="margin-bottom:0.5em;">
+        <h4>CP системи</h4>
+        <p>Банки, інвентаризація, бронювання<br>
+        <em>HBase, Zookeeper, MongoDB (w: majority)</em></p>
+      </div>
+      <div class="box">
+        <h4>AP системи</h4>
+        <p>DNS, соціальні мережі, shopping cart<br>
+        <em>DynamoDB (eventual), CouchDB, Cassandra</em></p>
+      </div>
+      <div class="note">S3 з листопада 2020: <strong>strongly consistent</strong> для всіх операцій</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 25 — EVENTUAL VS STRONG CONSISTENCY
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">25 / 45</span>
+  <h2>Eventual vs Strong Consistency</h2>
+  <pre><code class="language-text">
+Strong Consistency (S3 з 2020):
+  PUT s3://bucket/file.txt (version 2)
+  GET s3://bucket/file.txt → завжди version 2 ✅
+
+Eventual Consistency (старий S3, DynamoDB default):
+  PUT item {id: 1, stock: 0}      → записано в node-A
+  GET item {id: 1}                → може повернути stock: 5 (старе!)
+                                    поки реплікація не завершена
+
+DynamoDB: можна обрати
+  читання = EventualConsistencyRead  (дешевше)
+  читання = StrongConsistencyRead    (2x вартість)
+  </code></pre>
+  <div class="note">
+    💡 <strong>Практика:</strong> Для банківських транзакцій → Strong. Для лічильників переглядів → Eventual достатньо.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 26 — GDPR ТА DATA RESIDENCY
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">26 / 45</span>
+  <h2>GDPR та Data Residency</h2>
+  <div class="two-col" style="font-size:0.82em;">
+    <div class="box">
+      <h4>🇪🇺 GDPR ключові вимоги</h4>
+      <ul>
+        <li>Право на видалення</li>
+        <li>Право на перенесення даних</li>
+        <li>Дані ЄС = в ЄС (або SCCs)</li>
+        <li>Шифрування персональних даних</li>
+        <li>Breach notification ≤ 72 год</li>
+        <li>Data minimization</li>
+        <li>Purpose limitation</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>AWS Region вибір</h4>
+      <ul>
+        <li>🇪🇺 EU дані → eu-central-1 (Frankfurt)</li>
+        <li>🇮🇪 EU дані → eu-west-1 (Ireland)</li>
+        <li>🇺🇸 US дані → us-east-1, us-west-2</li>
+        <li>🌏 APAC → ap-southeast-1, ap-northeast-1</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">AWS не переміщує дані між regions без вашого дозволу (SRR &amp; CRR тільки явно)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 27 — DATA RESIDENCY В AWS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">27 / 45</span>
+  <h2>Data Residency в AWS: інструменти</h2>
+  <div class="two-col" style="font-size:0.8em;">
+    <div class="box">
+      <h4>🔒 AWS Config Rules</h4>
+      <p>Перевіряє чи ресурси у правильному region:<br>
+      <code>s3-bucket-replication-enabled</code><br>
+      <code>restricted-regions</code> (custom rule)</p>
+    </div>
+    <div class="box">
+      <h4>🏢 Service Control Policies (SCP)</h4>
+      <pre><code class="language-json">{
+  "Effect": "Deny",
+  "Action": "*",
+  "Condition": {
+    "StringNotEquals": {
+      "aws:RequestedRegion": [
+        "eu-central-1",
+        "eu-west-1"
+      ]
+    }
+  }
+}</code></pre>
+    </div>
+  </div>
+  <div class="note">⚠️ Логи (CloudTrail, S3 Access logs) теж є персональними даними → контролюйте де вони зберігаються</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 28 — S3 SECURITY
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">28 / 45</span>
+  <h2>S3 Security: захист даних</h2>
+  <div style="font-size:0.82em;">
+    <p><strong>Рівні захисту (ешелонована оборона):</strong></p>
+    <ol>
+      <li><strong>Block Public Access</strong> — завжди увімкнений за замовчуванням (2023+)</li>
+      <li><strong>Bucket Policy</strong> — resource-based policy (хто, що, звідки)</li>
+      <li><strong>IAM Policy</strong> — identity-based (який IAM principal може що робити)</li>
+      <li><strong>ACL (застарілий)</strong> — не рекомендується для нових bucket</li>
+      <li><strong>Encryption at rest</strong> — SSE-S3, SSE-KMS, SSE-C</li>
+      <li><strong>Encryption in transit</strong> — HTTPS (TLS 1.2+)</li>
+      <li><strong>S3 Object Lock</strong> — WORM захист від видалення/зміни</li>
+    </ol>
+    <div class="note">💡 Якщо Bucket Policy і IAM Policy конфліктують → застосовується більш <strong>обмежена</strong> политика (explicit Deny перемагає)</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 29 — S3 ENCRYPTION
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">29 / 45</span>
+  <h2>S3 Encryption Options</h2>
+  <table>
+    <tr><th>Тип</th><th>Управління ключами</th><th>Вартість</th><th>Audit Trail</th><th>Коли</th></tr>
+    <tr><td>SSE-S3</td><td>AWS (прозоро)</td><td>🆓 Безкоштовно</td><td>❌</td><td>Базова вимога</td></tr>
+    <tr><td>SSE-KMS</td><td>AWS KMS</td><td>💰 $0.03/10k calls</td><td>✅ CloudTrail</td><td>Compliance дані</td></tr>
+    <tr><td>DSSE-KMS</td><td>AWS KMS (подвійне)</td><td>💰💰</td><td>✅✅</td><td>FIPS 140-3 Level 3</td></tr>
+    <tr><td>SSE-C</td><td>Клієнт</td><td>🆓</td><td>❌</td><td>Власні ключі</td></tr>
+    <tr><td>Client-side</td><td>Клієнт (до відправки)</td><td>🆓</td><td>❌</td><td>Максимальний контроль</td></tr>
+  </table>
+  <div class="note" style="margin-top:0.5em;">
+    🔐 <strong>Рекомендація:</strong> SSE-KMS для PII/фінансових даних + увімкніть Key Rotation у KMS. SSE-S3 для решти.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 30 — ENCRYPTION IN TRANSIT + OBJECT LOCK
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">30 / 45</span>
+  <h2>Encryption in Transit &amp; S3 Object Lock</h2>
+  <div class="two-col">
+    <div>
+      <h3 style="font-size:0.85em;">Примусити HTTPS</h3>
+      <pre><code class="language-json">{
+  "Effect": "Deny",
+  "Principal": "*",
+  "Action": "s3:*",
+  "Resource": [
+    "arn:aws:s3:::my-bucket",
+    "arn:aws:s3:::my-bucket/*"
+  ],
+  "Condition": {
+    "Bool": {
+      "aws:SecureTransport": "false"
+    }
+  }
+}</code></pre>
+    </div>
+    <div>
+      <h3 style="font-size:0.85em;">S3 Object Lock (WORM)</h3>
+      <div class="box">
+        <p><strong>Governance mode:</strong> адміни можуть обійти (аудит)</p>
+        <p><strong>Compliance mode:</strong> НІХТО не може видалити (навіть root)</p>
+        <p style="color:var(--success);">✅ SEC 17a-4, FINRA, HIPAA, CJIS compliance</p>
+      </div>
+      <pre><code class="language-bash">aws s3api put-object-retention \
+  --bucket my-bucket \
+  --key important.pdf \
+  --retention '{
+    "Mode": "COMPLIANCE",
+    "RetainUntilDate": "2030-01-01T00:00:00"
+  }'</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 31 — S3 INTELLIGENT-TIERING
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">31 / 45</span>
+  <h2>S3 Intelligent-Tiering</h2>
+  <div style="font-size:0.82em;">
+    <div class="lc-bar">
+      <div style="background:#e74c3c;">🔥 Frequent Access<br><small>default</small></div>
+      <div style="background:#e67e22; flex:0.8;">🌡 Infrequent<br><small>30 днів</small></div>
+      <div style="background:#2980b9; flex:0.6;">❄️ Archive Instant<br><small>90 днів</small></div>
+      <div style="background:#27ae60; flex:0.5;">🌿 Archive<br><small>opt-in</small></div>
+      <div style="background:#1a252f; flex:0.4;">⛰️ Deep Archive<br><small>opt-in</small></div>
+    </div>
+    <div class="two-col" style="margin-top:0.6em;">
+      <div class="box">
+        <h4>✅ Переваги</h4>
+        <ul>
+          <li>Нема retrieval charges</li>
+          <li>Нема мінімального терміну</li>
+          <li>Моніторинг доступу автоматичний</li>
+          <li>Ідеально для непередбачуваних паттернів</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4>⚠️ Нюанси</h4>
+        <ul>
+          <li>Невелика щомісячна плата за моніторинг ($0.0025/1k objects)</li>
+          <li>Не підходить для об'єктів &lt;128 KB</li>
+          <li>Archive тiers потребують activation</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 32 — MONITORING STORAGE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">32 / 45</span>
+  <h2>Моніторинг Storage</h2>
+  <div class="two-col" style="font-size:0.82em;">
+    <div class="box">
+      <h4>☁️ CloudWatch метрики</h4>
+      <p><strong>S3:</strong></p>
+      <ul>
+        <li><code>BucketSizeBytes</code> — розмір bucket</li>
+        <li><code>NumberOfObjects</code> — кількість об'єктів</li>
+        <li><code>AllRequests</code> — кількість запитів</li>
+        <li><code>4xxErrors / 5xxErrors</code></li>
+      </ul>
+      <p style="margin-top:0.5em;"><strong>EBS:</strong></p>
+      <ul>
+        <li><code>VolumeReadOps / VolumeWriteOps</code></li>
+        <li><code>VolumeQueueLength</code></li>
+        <li><code>BurstBalance</code> (для gp2/st1)</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>🔍 S3 Storage Lens</h4>
+      <ul>
+        <li>Аналітика по всьому S3 organization</li>
+        <li>Cost efficiency recommendations</li>
+        <li>Data protection summary</li>
+        <li>Activity metrics (запити, помилки)</li>
+        <li>Free tier: 28 метрик<br>Advanced: 35+ метрик ($0.20/million objects)</li>
+      </ul>
+      <div class="note">💡 Storage Lens виявляє unused buckets, buckets без lifecycle policy та без versioning</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 33 — COST OPTIMIZATION
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">33 / 45</span>
+  <h2>Cost Optimization: Storage</h2>
+  <table>
+    <tr><th>Інструмент</th><th>Потенційне збереження</th><th>Складність</th></tr>
+    <tr><td>S3 Lifecycle policies</td><td><span class="tag-good">40–70%</span></td><td>Низька</td></tr>
+    <tr><td>S3 Intelligent-Tiering</td><td><span class="tag-good">20–40%</span></td><td>Дуже низька</td></tr>
+    <tr><td>gp3 замість gp2 (EBS)</td><td><span class="tag-good">20%</span></td><td>Низька</td></tr>
+    <tr><td>EBS snapshot cleanup</td><td><span class="tag-good">до 30% EBS витрат</span></td><td>Середня</td></tr>
+    <tr><td>Delete unused EBS volumes</td><td><span class="tag-good">10–25%</span></td><td>Низька</td></tr>
+    <tr><td>S3 Requester Pays</td><td>Перекладає витрати</td><td>Середня</td></tr>
+  </table>
+  <div class="note" style="margin-top:0.6em;">
+    📊 <strong>Реальний приклад:</strong> 100 TB S3 Standard ($2,300/міс) → Lifecycle до Glacier Deep ($180/міс) = <strong>$25,440/рік економії</strong>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 34 — ПРАКТИЧНИЙ ПРИКЛАД: LIFECYCLE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">34 / 45</span>
+  <h2>Практичний приклад: Lifecycle Policy</h2>
+  <p style="font-size:0.85em;"><strong>Задача:</strong> Застосунок генерує 1 TB логів/місяць. Вимога: зберігати 7 років (compliance).</p>
+  <div class="lc-bar">
+    <div style="background:#e74c3c;">0–30 д<br>Standard<br>$0.023/GB</div>
+    <div style="background:#e67e22;">30–90 д<br>Standard-IA<br>$0.0125/GB</div>
+    <div style="background:#2980b9;">90–365 д<br>Glacier Instant<br>$0.004/GB</div>
+    <div style="background:#27ae60;">1–7 рр<br>Glacier Deep<br>$0.00099/GB</div>
+    <div style="background:#7f8c8d; flex:0.5;">7+ рр<br>Delete</div>
+  </div>
+  <pre style="margin-top:0.4em;"><code class="language-bash">
+# Застосувати policy
+aws s3api put-bucket-lifecycle-configuration \
+  --bucket prod-app-logs \
+  --lifecycle-configuration file://lifecycle.json
+
+# Перевірити поточний стан
+aws s3api get-bucket-lifecycle-configuration \
+  --bucket prod-app-logs
+  </code></pre>
+  <div class="note">💰 Розрахункова вартість через рік: ~$800/міс замість $2,300/міс</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 35 — S3 MULTIPART UPLOAD
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">35 / 45</span>
+  <h2>S3 Multipart Upload</h2>
+  <pre><code class="language-text">
+Файл розміром 10 GB:
+  ┌──────────────────────────────────────────────────────┐
+  │  Частина 1 (5 GB)  │  Частина 2 (3 GB)  │  Ч. 3 (2GB)│
+  └─────────┬──────────┴──────────┬──────────┴──────┬─────┘
+            │ паралельно          │                 │
+            ▼                     ▼                 ▼
+         S3 Part 1             S3 Part 2         S3 Part 3
+            └──────────────────────┴──────────────────┘
+                         CompleteMultipartUpload
+                              → Фінальний об'єкт
+</code></pre>
+  <ul style="font-size:0.82em;">
+    <li><strong>Обов'язково</strong> для файлів &gt; 5 GB (максимум PUT = 5 GB)</li>
+    <li><strong>Рекомендовано</strong> для файлів &gt; 100 MB</li>
+    <li>Частини завантажуються паралельно → швидше</li>
+    <li>Відновлення при збоях — завантажуйте тільки невдалу частину</li>
+    <li>⚠️ <strong>Не завершені</strong> multipart uploads = вартість! Додайте Lifecycle rule для cleanup</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 36 — DATA LAKE ПАТТЕРН
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">36 / 45</span>
+  <h2>Архітектурний паттерн: Data Lake</h2>
+  <pre><code class="language-text">
+┌──────────────────────────────────────────────────────────────┐
+│                      Amazon S3 (Data Lake)                   │
+│                                                              │
+│  s3://data-lake/raw/      s3://data-lake/processed/   s3://data-lake/curated/
+│  (Landing Zone)    →      (Cleaned/Enriched)    →    (Business Ready)
+│  Storage: Standard        Storage: Standard-IA        Storage: IA/Glacier
+└──────────────────────────────────────────────────────────────┘
+         │                         │                      │
+    AWS Glue ETL           Amazon Athena           Amazon QuickSight
+    (трансформація)       (SQL запити на S3)        (візуалізація)
+  </code></pre>
+  <div class="two-col" style="font-size:0.8em; margin-top:0.4em;">
+    <div class="box">
+      <h4>Переваги</h4>
+      <ul><li>Decoupled storage і compute</li><li>Schema-on-read</li><li>Необмежений масштаб</li></ul>
+    </div>
+    <div class="box">
+      <h4>Безпека</h4>
+      <ul><li>AWS Lake Formation (ACL для даних)</li><li>Column-level security</li><li>Row-level filtering</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 37 — REAL-WORLD КЕЙС
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">37 / 45</span>
+  <h2>Real-world кейс: Медіа платформа</h2>
+  <div style="font-size:0.82em;">
+    <p><strong>Задача:</strong> Зберігати 500 TB відеоконтенту. Нові відео переглядаються часто, старі — рідко.</p>
+    <pre><code class="language-text">
+Архітектурне рішення:
+
+  Upload Service
+      │
+      ▼
+  S3 (Standard) ──── S3 Event → Lambda (транскодування)
+      │                               │
+      │ Lifecycle (30 днів)            ▼
+      ▼                       S3 (транскодовано)
+  S3 (Standard-IA)                    │
+      │                        CloudFront CDN
+      │ Lifecycle (365 днів)          │
+      ▼                         Глядачі 🌍
+  S3 (Glacier Instant)
+
+  Метадані: DynamoDB (відео title, duration, tags)
+  Пошук:    OpenSearch Service
+  Аналітика: Athena + S3 (access logs)
+    </code></pre>
+    <div class="note">💰 <strong>Результат:</strong> Збережено $180,000/рік на storage завдяки lifecycle policies</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 38 — SHARED RESPONSIBILITY ДЛЯ STORAGE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">38 / 45</span>
+  <h2>Shared Responsibility: Storage</h2>
+  <table>
+    <tr><th>Відповідальність</th><th>AWS</th><th>Ви (клієнт)</th></tr>
+    <tr><td>Фізичний захист datacenter</td><td>✅</td><td>—</td></tr>
+    <tr><td>Доступність інфраструктури S3/EBS</td><td>✅</td><td>—</td></tr>
+    <tr><td>Шифрування даних (at rest)</td><td>Надає інструменти</td><td>✅ Налаштовуєте</td></tr>
+    <tr><td>Bucket policy / IAM</td><td>Надає інструменти</td><td>✅ Конфігуруєте</td></tr>
+    <tr><td>Block Public Access</td><td>Default ON (2023+)</td><td>✅ Не вимикайте!</td></tr>
+    <tr><td>Backup / Lifecycle</td><td>Надає сервіси</td><td>✅ Налаштовуєте</td></tr>
+    <tr><td>Compliance / GDPR</td><td>GDPR compliant infra</td><td>✅ Ваші дані, ваша відповід.</td></tr>
+    <tr><td>Versioning</td><td>Надає функцію</td><td>✅ Вмикаєте</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 39 — ANTI-PATTERNS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">39 / 45</span>
+  <h2>Anti-Patterns: Що НЕ робити</h2>
+  <div class="two-col" style="font-size:0.82em;">
+    <div>
+      <h3 style="font-size:0.9em; color:var(--danger);">❌ S3 помилки</h3>
+      <ul>
+        <li>Публічний bucket без потреби</li>
+        <li>Секрети / credentials в S3</li>
+        <li>Один bucket prod+dev+test</li>
+        <li>Не версіонувати критичні дані</li>
+        <li>Ігнорувати lifecycle (= марні гроші)</li>
+        <li>Не завершені multipart uploads</li>
+        <li>S3 замість EBS для DB</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="font-size:0.9em; color:var(--danger);">❌ EBS / EFS помилки</h3>
+      <ul>
+        <li>gp2 в 2024 (є gp3!)</li>
+        <li>Unused EBS volumes (платите за повітря)</li>
+        <li>Немає snapshot schedule</li>
+        <li>EBS без шифрування для PII</li>
+        <li>EFS для DB workloads (висока latency)</li>
+        <li>One AZ EFS для критичних даних</li>
+        <li>Snapshot накопичення без cleanup</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 40 — CHECKLIST PRODUCTION
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">40 / 45</span>
+  <h2>Production-Ready Storage Checklist</h2>
+  <div class="two-col" style="font-size:0.8em;">
+    <div class="box">
+      <h4>📦 S3</h4>
+      <ul>
+        <li>✅ Block Public Access увімкнено</li>
+        <li>✅ Versioning (критичні buckets)</li>
+        <li>✅ Lifecycle policy</li>
+        <li>✅ Encryption at rest (SSE-KMS/S3)</li>
+        <li>✅ Bucket policy: deny HTTP</li>
+        <li>✅ Access logging → окремий bucket</li>
+        <li>✅ Object Lock (якщо compliance)</li>
+        <li>✅ Cross-region replication (DR)</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>💾 EBS / 📂 EFS</h4>
+      <ul>
+        <li>✅ Snapshot schedule (DLM)</li>
+        <li>✅ EBS Encryption увімкнено</li>
+        <li>✅ gp3 (не gp2)</li>
+        <li>✅ Cleanup unused volumes + snapshots</li>
+        <li>✅ EFS Multi-AZ (якщо ha)</li>
+        <li>✅ EFS Encryption at rest</li>
+        <li>✅ EFS Lifecycle (IA tier)</li>
+        <li>✅ Moніторинг (CloudWatch alarms)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 41 — ПРАКТИЧНЕ ЗАВДАННЯ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">41 / 45</span>
+  <h2>Практичне завдання (Lab 3)</h2>
+  <div style="font-size:0.85em;">
+    <p>Реалізуйте наступну архітектуру:</p>
+    <ol>
+      <li>Створити S3 bucket з <strong>Block Public Access = ON</strong></li>
+      <li>Увімкнути <strong>versioning</strong></li>
+      <li>Налаштувати <strong>lifecycle policy</strong>: Standard-IA (30d) → Glacier (90d)</li>
+      <li>Налаштувати <strong>SSE-KMS</strong> шифрування</li>
+      <li>Додати bucket policy: <strong>deny HTTP</strong></li>
+      <li>Створити EBS volume <strong>gp3</strong> та прикріпити до EC2</li>
+      <li>Налаштувати <strong>snapshot schedule</strong> (щоденний)</li>
+      <li>Створити S3 event notification → Lambda (log object creation)</li>
+    </ol>
+    <div class="note" style="margin-top:0.6em;">
+      <strong>Критерії:</strong> Всі налаштування через AWS Console або AWS CLI. Зробіть screenshot/команди в README.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 42 — ПОРІВНЯННЯ ВСІХ AWS STORAGE СЕРВІСІВ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">42 / 45</span>
+  <h2>AWS Storage Services: повний огляд</h2>
+  <table style="font-size:0.7em;">
+    <tr><th>Сервіс</th><th>Тип</th><th>Протокол</th><th>Use Case</th></tr>
+    <tr><td>S3</td><td>Object</td><td>HTTP/REST</td><td>Загальне зберігання, бекапи, Data Lake</td></tr>
+    <tr><td>EBS</td><td>Block</td><td>NVMe/iSCSI</td><td>EC2 диски, БД (1 instance)</td></tr>
+    <tr><td>EFS</td><td>File</td><td>NFS v4</td><td>Shared filesystem Linux (multi-instance)</td></tr>
+    <tr><td>FSx for Windows</td><td>File</td><td>SMB</td><td>Windows shared drives, AD integration</td></tr>
+    <tr><td>FSx for Lustre</td><td>File</td><td>Lustre</td><td>HPC, ML training (sub-ms latency)</td></tr>
+    <tr><td>S3 Glacier</td><td>Object (archive)</td><td>HTTP</td><td>Архіви, compliance, рідкий доступ</td></tr>
+    <tr><td>Storage Gateway</td><td>Hybrid</td><td>NFS/SMB/iSCSI</td><td>On-premises до хмари</td></tr>
+    <tr><td>Snow Family</td><td>Physical</td><td>NFS/S3 API</td><td>Offline перенос великих обсягів даних</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 43 — КЛЮЧОВІ ВИСНОВКИ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">43 / 45</span>
+  <h2>Ключові висновки</h2>
+  <div class="two-col" style="font-size:0.85em;">
+    <ol>
+      <li><strong>Storage = архітектурне рішення</strong><br>Object → S3, Block → EBS, File → EFS</li>
+      <li><strong>Автоматизуй lifecycle</strong><br>Hot → Warm → Cold → Archive → Delete</li>
+      <li><strong>Backup ≠ Archive</strong><br>Різні цілі, RPO/RTO, інструменти</li>
+      <li><strong>CAP: P завжди є в мережі</strong><br>Обирай C або A залежно від задачі</li>
+    </ol>
+    <ol start="5">
+      <li><strong>GDPR: дані в правильному region + encryption</strong><br>eu-central-1 для EU даних</li>
+      <li><strong>Security by default</strong><br>Block Public Access, SSE-KMS, HTTPS only</li>
+      <li><strong>Моніторинг і оптимізація</strong><br>Storage Lens, CloudWatch, cleanup orphaned resources</li>
+      <li><strong>Event-driven storage</strong><br>S3 Events → Lambda → автоматизація</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 44 — РЕСУРСИ ТА ПИТАННЯ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">44 / 45</span>
+  <h2>Ресурси &amp; Питання для самоперевірки</h2>
+  <div class="two-col" style="font-size:0.8em;">
+    <div>
+      <h3 style="font-size:0.9em;">📚 Ресурси</h3>
+      <ul>
+        <li><a href="https://docs.aws.amazon.com/s3/" style="color:#3498db;">AWS S3 Documentation</a></li>
+        <li><a href="https://docs.aws.amazon.com/ebs/" style="color:#3498db;">AWS EBS User Guide</a></li>
+        <li><a href="https://docs.aws.amazon.com/efs/" style="color:#3498db;">AWS EFS User Guide</a></li>
+        <li><a href="https://aws.amazon.com/s3/pricing/" style="color:#3498db;">S3 Pricing</a></li>
+        <li><a href="https://aws.amazon.com/compliance/gdpr-center/" style="color:#3498db;">GDPR on AWS</a></li>
+        <li><a href="https://robertgreiner.com/cap-theorem-revisited/" style="color:#3498db;">CAP Theorem Revisited</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="font-size:0.9em;">❓ Питання для самоперевірки</h3>
+      <ol>
+        <li>Різниця Object/Block/File storage?</li>
+        <li>Коли S3 Intelligent-Tiering?</li>
+        <li>Що станеться з Instance Store при stop?</li>
+        <li>CAP: яку частину не можна ігнорувати?</li>
+        <li>Як lifecycle policy зменшує витрати?</li>
+        <li>Що таке Presigned URL і коли використовувати?</li>
+        <li>SSE-KMS vs SSE-S3: коли що обрати?</li>
+        <li>Що дає S3 Object Lock?</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 45 — НАСТУПНА ЛЕКЦІЯ
+════════════════════════════════════════════════════════════ -->
+<section class="title-slide">
+  <span class="slide-num">45 / 45</span>
+  <h2 style="color:#ecf0f1;">Дякую за увагу!</h2>
+  <hr style="border-color:#555; margin:0.8em auto; width:50%;"/>
+  <h3 style="color:var(--accent); margin-top:0.8em;">Наступна лекція 7:</h3>
+  <h2 style="font-size:1.1em;">Хмарні бази даних</h2>
+  <div class="box" style="max-width:480px; margin:1em auto; text-align:left;">
+    <ul style="font-size:0.85em;">
+      <li>RDBMS vs NoSQL: ACID vs BASE</li>
+      <li>DB як bottleneck та як масштабувати</li>
+      <li>AWS RDS (MySQL, PostgreSQL, Aurora)</li>
+      <li>Amazon DynamoDB</li>
+      <li>Anti-patterns та best practices</li>
+    </ul>
+  </div>
+  <p style="color:var(--muted); font-size:0.75em; margin-top:0.8em;">
+    Підготовка: пригадайте основи SQL та поняття транзакцій
+  </p>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<!-- Reveal.js scripts -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: false,   // we have custom slide numbers
+    transition: 'slide',
+    transitionSpeed: 'fast',
+    controls: true,
+    progress: true,
+    center: false,
+    width: 1750,
+    height: 900,
+    margin: 0.03,
+    minScale: 0.2,
+    maxScale: 2.0,
+    plugins: [ RevealHighlight, RevealNotes ],
+    keyboard: {
+      // Space / Arrow keys work by default
+    }
+  });
+</script>
+</body>
+</html>
