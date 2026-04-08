@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Лекція 7 — Хмарні бази даних</title>
+
+  <!-- Reveal.js CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <!-- Syntax highlighting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+
+  <style>
+    :root {
+      --accent:  #f39c12;
+      --success: #2ecc71;
+      --danger:  #e74c3c;
+      --info:    #3498db;
+      --muted:   #95a5a6;
+    }
+
+    /* Base font reduced so slides fit at 1920×1080 */
+    .reveal { font-size: 34px; }
+
+    .reveal h1, .reveal h2 { color: var(--accent); }
+    .reveal h3 { color: #ecf0f1; }
+
+    .reveal section { text-align: left; }
+    .reveal .title-slide { text-align: center; }
+
+    /* Tighter heading margins */
+    .reveal h2 { margin: 0 0 0.3em; font-size: 1.2em; }
+    .reveal h3 { margin: 0 0 0.25em; font-size: 0.95em; }
+
+    .reveal pre { font-size: 0.50em; box-shadow: none; margin: 0.3em 0; }
+    .reveal code { font-size: 0.72em; }
+    .reveal table { font-size: 0.68em; width: 100%; }
+    .reveal table th { background: #2c3e50; color: var(--accent); }
+    .reveal table td, .reveal table th { border: 1px solid #444; padding: 4px 8px; }
+
+    /* Allow per-slide vertical scroll when content still overflows */
+    .reveal .slides section {
+      overflow-y: auto;
+      max-height: 100%;
+      box-sizing: border-box;
+    }
+
+    .tag-good { color: var(--success); font-weight: bold; }
+    .tag-bad  { color: var(--danger);  font-weight: bold; }
+    .tag-warn { color: var(--accent);  font-weight: bold; }
+    .tag-info { color: var(--info);    font-weight: bold; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.68em;
+      font-weight: bold;
+      margin: 2px;
+    }
+    .pill-orange { background: #e67e22; }
+    .pill-blue   { background: #2980b9; }
+    .pill-green  { background: #27ae60; }
+    .pill-gray   { background: #7f8c8d; }
+    .pill-red    { background: #c0392b; }
+    .pill-purple { background: #8e44ad; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7em;
+    }
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.6em;
+    }
+
+    .box {
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 0.4em 0.8em;
+      background: rgba(255,255,255,0.05);
+      font-size: 0.76em;
+    }
+    .box h4 { margin: 0 0 0.3em; color: var(--accent); font-size: 0.95em; }
+
+    .box-good { border-color: var(--success); background: rgba(46,204,113,0.07); }
+    .box-bad  { border-color: var(--danger);  background: rgba(231,76,60,0.07);  }
+    .box-info { border-color: var(--info);    background: rgba(52,152,219,0.07); }
+
+    .note {
+      border-left: 4px solid var(--accent);
+      padding: 0.3em 0.7em;
+      background: rgba(243,156,18,0.1);
+      font-size: 0.70em;
+      margin-top: 0.4em;
+    }
+
+    .slide-num {
+      position: absolute;
+      top: 8px;
+      right: 14px;
+      font-size: 0.44em;
+      color: #666;
+    }
+
+    ul li { margin-bottom: 0.18em; }
+    ol li  { margin-bottom: 0.18em; }
+
+    /* CAP triangle */
+    .cap-triangle {
+      text-align: center;
+      font-size: 0.72em;
+      margin: 0.4em 0;
+    }
+
+    /* isolation levels table highlight */
+    .iso-yes { color: var(--danger); font-weight: bold; }
+    .iso-no  { color: var(--success); font-weight: bold; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 1 — TITLE
+════════════════════════════════════════════════════════════ -->
+<section class="title-slide">
+  <h1 style="font-size:1.6em;">Лекція 7</h1>
+  <h2 style="font-size:1.3em; color:#ecf0f1;">Хмарні бази даних</h2>
+  <hr style="border-color:#555; margin:1em auto; width:60%;" />
+  <p style="color:var(--muted); font-size:0.8em;">
+    Курс «Хмарні технології інформаційних систем»<br>
+    Бакалавр ІТ · 3 курс · 2 години
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 2 — AGENDA
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">2 / 45</span>
+  <h2>Agenda</h2>
+  <div class="two-col" style="font-size:0.82em;">
+    <ol>
+      <li>Де живуть дані?</li>
+      <li>RDBMS vs NoSQL</li>
+      <li>Типи NoSQL (KV, Document, WC, Graph)</li>
+      <li>Вибір типу бази даних</li>
+      <li>ACID — Atomicity, Consistency, Isolation, Durability</li>
+      <li>Рівні ізоляції</li>
+      <li>BASE — Eventually Consistent</li>
+      <li>ACID vs BASE порівняння</li>
+    </ol>
+    <ol start="9">
+      <li>CAP теорема</li>
+      <li>DB як Bottleneck</li>
+      <li>Стратегії масштабування</li>
+      <li>Anti-patterns</li>
+      <li>Amazon RDS</li>
+      <li>Amazon Aurora</li>
+      <li>Amazon DynamoDB</li>
+      <li>Amazon ElastiCache</li>
+      <li>Підсумки</li>
+    </ol>
+  </div>
+  <div class="note">Підготовка: пригадайте основи SQL, поняття транзакцій та JOIN</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 3 — Де живуть дані?
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">3 / 45</span>
+  <h2>Де живуть дані?</h2>
+  <table>
+    <tr><th>Тип сховища</th><th>Що зберігає</th><th>Приклад</th><th>AWS</th></tr>
+    <tr><td>File System</td><td>Файли, бінарні дані</td><td>Linux FS</td><td>S3, EFS</td></tr>
+    <tr><td>RDBMS</td><td>Структуровані таблиці</td><td>PostgreSQL, MySQL</td><td>RDS, Aurora</td></tr>
+    <tr><td>NoSQL</td><td>KV, документи, графи</td><td>MongoDB, Cassandra</td><td>DynamoDB, DocumentDB</td></tr>
+    <tr><td>Cache</td><td>Тимчасові, швидкі дані</td><td>Redis, Memcached</td><td>ElastiCache</td></tr>
+    <tr><td>Data Warehouse</td><td>Аналітика (OLAP)</td><td>Redshift, BigQuery</td><td>Redshift</td></tr>
+    <tr><td>Search Index</td><td>Full-text пошук</td><td>Elasticsearch</td><td>OpenSearch</td></tr>
+  </table>
+  <div class="note">Правило: кожен тип даних має свій оптимальний тип сховища</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 4 — RDBMS огляд
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">4 / 45</span>
+  <h2>RDBMS — Реляційні бази даних</h2>
+  <div class="two-col">
+    <div>
+      <h3>Принципи</h3>
+      <ul>
+        <li><strong>Таблиці</strong> з фіксованою схемою</li>
+        <li><strong>SQL</strong> — стандартна мова запитів</li>
+        <li><strong>Зв'язки</strong> між таблицями через JOIN</li>
+        <li><strong>ACID-транзакції</strong></li>
+        <li><strong>Constraints</strong>: PK, FK, UNIQUE, CHECK</li>
+        <li><strong>Нормалізація</strong>: дані без дублювання</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Популярні рушії</h3>
+      <ul>
+        <li><span class="pill pill-blue">PostgreSQL</span> — потужний, відкритий</li>
+        <li><span class="pill pill-orange">MySQL</span> — широко розповсюджений</li>
+        <li><span class="pill pill-gray">Oracle</span> — enterprise</li>
+        <li><span class="pill pill-gray">SQL Server</span> — Microsoft</li>
+        <li><span class="pill pill-green">MariaDB</span> — fork MySQL</li>
+      </ul>
+      <div class="note" style="margin-top:0.6em;">AWS: RDS підтримує всі ці рушії</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 5 — NoSQL огляд
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">5 / 45</span>
+  <h2>NoSQL — "Not Only SQL"</h2>
+  <div class="two-col">
+    <div>
+      <h3>Принципи</h3>
+      <ul>
+        <li><strong>Гнучка або відсутня схема</strong> (schema-less)</li>
+        <li>Горизонтальне масштабування — основна мета</li>
+        <li>Зазвичай жертвує ACID заради продуктивності</li>
+        <li>Оптимізовані для конкретного паттерну доступу</li>
+        <li>Денормалізація даних для швидкості</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Коли NoSQL?</h3>
+      <ul>
+        <li>Мільйони запитів/сек</li>
+        <li>Структура даних змінюється часто</li>
+        <li>Дані природньо ієрархічні (JSON)</li>
+        <li>Глобальний розподіл обов'язковий</li>
+        <li>Eventual consistency — прийнятна</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">NoSQL ≠ "без SQL". Це про горизонтальне масштабування та гнучкість схеми.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 6 — RDBMS vs NoSQL таблиця
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">6 / 45</span>
+  <h2>RDBMS vs NoSQL</h2>
+  <table>
+    <tr><th>Характеристика</th><th>RDBMS</th><th>NoSQL</th></tr>
+    <tr><td>Схема</td><td>Фіксована, жорстка</td><td>Гнучка / відсутня</td></tr>
+    <tr><td>Мова запитів</td><td>SQL (стандартна)</td><td>API / DSL (варіюється)</td></tr>
+    <tr><td>Масштабування</td><td>Вертикальне (scale up)</td><td>Горизонтальне (scale out)</td></tr>
+    <tr><td>Гарантії</td><td>ACID</td><td>BASE (зазвичай)</td></tr>
+    <tr><td>Зв'язки</td><td>JOIN між таблицями</td><td>Денормалізація</td></tr>
+    <tr><td>Транзакції</td><td>Multi-row, multi-table</td><td>Обмежені (1 документ)</td></tr>
+    <tr><td>Use-cases</td><td>Фінанси, ERP, CRM</td><td>Соцмережі, IoT, каталоги</td></tr>
+    <tr><td>Приклади</td><td>PostgreSQL, MySQL, Oracle</td><td>DynamoDB, MongoDB, Cassandra</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 7 — NoSQL Key-Value
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">7 / 45</span>
+  <h2>NoSQL тип 1: Key-Value</h2>
+  <div class="two-col">
+    <div>
+      <h3>Структура</h3>
+      <pre><code class="language-json">{
+  "session:abc123": {
+    "user_id": 42,
+    "cart": ["item1", "item2"],
+    "expires": 1710000000
+  },
+  "counter:page_views": 58291
+}</code></pre>
+      <ul style="font-size:0.8em; margin-top:0.4em;">
+        <li>Доступ: тільки по ключу O(1)</li>
+        <li>Значення: будь-який blob/JSON</li>
+        <li>Немає складних запитів</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Характеристики</h3>
+      <ul>
+        <li><span class="tag-good">✅</span> Екстремально швидкий (мікросекунди)</li>
+        <li><span class="tag-good">✅</span> Простий для розуміння</li>
+        <li><span class="tag-good">✅</span> Легко шардується</li>
+        <li><span class="tag-bad">❌</span> Немає запитів по значенню</li>
+        <li><span class="tag-bad">❌</span> Немає зв'язків</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">
+        <strong>AWS:</strong> ElastiCache (Redis), DynamoDB<br>
+        <strong>Use-cases:</strong> сесії, кеш, лічильники, черги
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 8 — NoSQL Document
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">8 / 45</span>
+  <h2>NoSQL тип 2: Document</h2>
+  <div class="two-col">
+    <div>
+      <h3>Структура (JSON/BSON)</h3>
+      <pre><code class="language-json">{
+  "_id": "prod-001",
+  "name": "Ноутбук",
+  "price": 29999,
+  "specs": {
+    "cpu": "i7-13th",
+    "ram": 16,
+    "storage": "512 SSD"
+  },
+  "tags": ["electronics", "laptop"]
+}</code></pre>
+    </div>
+    <div>
+      <h3>Характеристики</h3>
+      <ul>
+        <li><span class="tag-good">✅</span> Гнучка схема (різні поля у різних документів)</li>
+        <li><span class="tag-good">✅</span> Вкладені дані разом → менше JOIN</li>
+        <li><span class="tag-good">✅</span> Природній для JSON API</li>
+        <li><span class="tag-bad">❌</span> Складні JOIN між документами</li>
+        <li><span class="tag-bad">❌</span> Дублювання даних при денормалізації</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">
+        <strong>AWS:</strong> Amazon DocumentDB (MongoDB-compatible)<br>
+        <strong>Use-cases:</strong> каталоги, профілі, CMS, e-commerce
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 9 — NoSQL Wide-Column
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">9 / 45</span>
+  <h2>NoSQL тип 3: Wide-Column</h2>
+  <div class="two-col">
+    <div>
+      <h3>Структура (Cassandra-like)</h3>
+      <pre><code class="language-sql">-- Таблиця: sensor_readings
+-- Partition key: sensor_id
+-- Clustering key: timestamp
+
+sensor_id | timestamp  | temp | humidity
+----------|------------|------|--------
+  "s001"  | 2024-01-01 | 22.1 | 65
+  "s001"  | 2024-01-02 | 21.8 | 67
+  "s002"  | 2024-01-01 | 19.3 | 72</code></pre>
+    </div>
+    <div>
+      <h3>Характеристики</h3>
+      <ul>
+        <li><span class="tag-good">✅</span> Мільйони записів/сек</li>
+        <li><span class="tag-good">✅</span> Time series даних</li>
+        <li><span class="tag-good">✅</span> Автоматичний sharding по partition key</li>
+        <li><span class="tag-bad">❌</span> Запити тільки по partition key</li>
+        <li><span class="tag-bad">❌</span> Немає flexible queries</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">
+        <strong>AWS:</strong> Amazon Keyspaces (Cassandra-compatible)<br>
+        <strong>Use-cases:</strong> IoT, логи, метрики, time series
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 10 — NoSQL Graph
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">10 / 45</span>
+  <h2>NoSQL тип 4: Graph</h2>
+  <div class="two-col">
+    <div>
+      <h3>Структура</h3>
+      <pre><code class="language-cypher">-- Cypher (Neo4j query language)
+-- Хто є другами друзів Аліси?
+MATCH (alice:Person {name:"Alice"})
+      -[:FRIEND]->(:Person)
+      -[:FRIEND]->(fof:Person)
+WHERE fof.name <> "Alice"
+RETURN DISTINCT fof.name
+
+-- "Знайти шахрайські транзакції за 3 кроки"
+MATCH p=(a)-[:TRANSFER*1..3]->(b)
+WHERE b.flagged = true
+RETURN p</code></pre>
+    </div>
+    <div>
+      <h3>Характеристики</h3>
+      <ul>
+        <li><span class="tag-good">✅</span> Traversal по зв'язках — природній</li>
+        <li><span class="tag-good">✅</span> Глибокі зв'язки без складних JOIN</li>
+        <li><span class="tag-bad">❌</span> Не підходить для агрегацій</li>
+        <li><span class="tag-bad">❌</span> Нішевий, менша екосистема</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">
+        <strong>AWS:</strong> Amazon Neptune<br>
+        <strong>Use-cases:</strong> соцмережі, рекомендації, fraud detection, knowledge graphs
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 11 — Вибір БД
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">11 / 45</span>
+  <h2>Вибір типу БД — дерево рішень</h2>
+  <pre style="font-size:0.55em;"><code class="language-text">Потрібні JOIN та ACID-транзакції?
+  ├─ ТАК → RDBMS (PostgreSQL / RDS / Aurora)
+  └─ НІ  →
+         Який паттерн доступу?
+           ├─ По ключу, кеш, сесії, черги
+           │     → Key-Value (Redis / ElastiCache / DynamoDB)
+           ├─ Вкладені документи, гнучка схема, e-commerce
+           │     → Document (MongoDB / DocumentDB)
+           ├─ Великі потоки записів, time series, IoT, логи
+           │     → Wide-Column (Cassandra / Keyspaces)
+           ├─ Складні зв'язки, рекомендації, fraud
+           │     → Graph (Neo4j / Neptune)
+           └─ Аналітика, агрегації по великим даним
+                 → Data Warehouse (Redshift / Athena)</code></pre>
+  <div class="note">Не бійтесь поєднувати: RDBMS для транзакцій + Redis для кешу + S3 для файлів</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 12 — ACID огляд
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">12 / 45</span>
+  <h2>ACID — Гарантії транзакцій</h2>
+  <p style="font-size:0.82em; margin-bottom:0.3em;"><strong>Транзакція</strong> — набір операцій, що виконуються як єдине ціле (все або нічого).</p>
+  <div class="three-col">
+    <div class="box">
+      <h4>A — Atomicity</h4>
+      Все або нічого.<br>
+      Якщо будь-який крок завершився з помилкою — весь блок відкочується.
+    </div>
+    <div class="box">
+      <h4>C — Consistency</h4>
+      Дані завжди задовольняють усі правила (constraints, FK, CHECK).<br>
+      Перехід між двома валідними станами.
+    </div>
+    <div class="box">
+      <h4>I — Isolation</h4>
+      Паралельні транзакції не "бачать" незафіксованих змін одна одної.
+    </div>
+  </div>
+  <div class="box" style="margin-top:0.5em;">
+    <h4>D — Durability</h4>
+    Після COMMIT — дані збережені назавжди, навіть після збою сервера. Реалізується через WAL (Write-Ahead Log).
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 13 — Atomicity
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">13 / 45</span>
+  <h2>A — Atomicity: Все або нічого</h2>
+  <div class="two-col">
+    <div>
+      <h3>Приклад: банківський переказ</h3>
+      <pre><code class="language-sql">BEGIN;
+  -- Крок 1: зняти з рахунку A
+  UPDATE accounts
+  SET balance = balance - 500
+  WHERE id = 1;
+
+  -- Крок 2: покласти на рахунок B
+  UPDATE accounts
+  SET balance = balance + 500
+  WHERE id = 2;
+
+  -- Якщо збій між кроком 1 і 2 →
+  -- ROLLBACK автоматично!
+COMMIT;</code></pre>
+    </div>
+    <div>
+      <h3>Без Atomicity</h3>
+      <div class="box box-bad">
+        <h4>❌ Проблема</h4>
+        Крок 1 виконався (гроші знято),<br>
+        сервер впав до кроку 2 →<br>
+        гроші зникли зі системи!
+      </div>
+      <div class="box box-good" style="margin-top:0.5em;">
+        <h4>✅ З Atomicity</h4>
+        Збій → ROLLBACK → рахунок A не змінився.
+        Система залишається в консистентному стані.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 14 — Consistency
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">14 / 45</span>
+  <h2>C — Consistency: Дані завжди валідні</h2>
+  <div class="two-col">
+    <div>
+      <pre><code class="language-sql">-- Правило: balance >= 0
+ALTER TABLE accounts
+  ADD CONSTRAINT chk_balance
+  CHECK (balance >= 0);
+
+-- Спроба порушити правило:
+BEGIN;
+  UPDATE accounts
+  SET balance = balance - 1000
+  WHERE id = 1;
+  -- balance: 200 - 1000 = -800
+  -- ПОРУШЕННЯ CHECK!
+-- → Транзакція відхиляється
+-- → balance залишається 200
+ROLLBACK; -- автоматично</code></pre>
+    </div>
+    <div>
+      <h3>Що забезпечує Consistency</h3>
+      <ul>
+        <li><strong>PK / UNIQUE</strong> — унікальність</li>
+        <li><strong>FK</strong> — посилальна цілісність</li>
+        <li><strong>CHECK</strong> — бізнес-правила</li>
+        <li><strong>NOT NULL</strong> — обов'язкові поля</li>
+        <li><strong>Triggers</strong> — складна логіка</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">
+        Consistency в ACID — це про <em>правила бази даних</em>,<br>
+        не про розподілену консистентність (CAP)!
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 15 — Isolation
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">15 / 45</span>
+  <h2>I — Isolation: Рівні ізоляції</h2>
+  <p style="font-size:0.75em; margin-bottom:0.3em;">Чим вищий рівень ізоляції — тим менше аномалій, але більший lock-contention.</p>
+  <table style="font-size:0.63em;">
+    <tr>
+      <th>Рівень ізоляції</th>
+      <th>Dirty Read</th>
+      <th>Non-Repeatable Read</th>
+      <th>Phantom Read</th>
+      <th>Продуктивність</th>
+    </tr>
+    <tr>
+      <td><strong>Read Uncommitted</strong></td>
+      <td class="iso-yes">можливий</td>
+      <td class="iso-yes">можливий</td>
+      <td class="iso-yes">можливий</td>
+      <td>🟢 Найвища</td>
+    </tr>
+    <tr>
+      <td><strong>Read Committed</strong> (default PG)</td>
+      <td class="iso-no">захист</td>
+      <td class="iso-yes">можливий</td>
+      <td class="iso-yes">можливий</td>
+      <td>🟡 Висока</td>
+    </tr>
+    <tr>
+      <td><strong>Repeatable Read</strong> (default MySQL)</td>
+      <td class="iso-no">захист</td>
+      <td class="iso-no">захист</td>
+      <td class="iso-yes">можливий</td>
+      <td>🟠 Середня</td>
+    </tr>
+    <tr>
+      <td><strong>Serializable</strong></td>
+      <td class="iso-no">захист</td>
+      <td class="iso-no">захист</td>
+      <td class="iso-no">захист</td>
+      <td>🔴 Найнижча</td>
+    </tr>
+  </table>
+  <div class="note" style="margin-top:0.4em;">
+    <strong>Dirty Read</strong> — читання незафіксованих даних &nbsp;|&nbsp;
+    <strong>Non-Repeatable</strong> — рядок змінився між двома reads &nbsp;|&nbsp;
+    <strong>Phantom</strong> — нові рядки з'явились між reads
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 16 — Durability
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">16 / 45</span>
+  <h2>D — Durability: Збережено назавжди</h2>
+  <div class="two-col">
+    <div>
+      <h3>WAL — Write-Ahead Log</h3>
+      <pre style="font-size:0.52em;"><code class="language-text">Послідовність:
+1. App → COMMIT
+2. DB записує транзакцію у WAL (на диск)
+3. DB відповідає "OK" клієнту
+4. (Пізніше) Дані переносяться у data files
+
+Якщо сервер впав після кроку 2:
+  → При restart: відновлення з WAL
+  → Дані не втрачені ✅
+
+Якщо сервер впав до кроку 2:
+  → Транзакція не підтверджена
+  → Відповідь не отримана клієнтом
+  → Дані не збережені (atomicity)</code></pre>
+    </div>
+    <div>
+      <h3>В AWS</h3>
+      <ul>
+        <li><strong>RDS Multi-AZ</strong>: синхронна реплікація перед підтвердженням</li>
+        <li><strong>Aurora</strong>: 6 копій у 3 AZ — запис після 4/6 підтвердження</li>
+        <li><strong>DynamoDB</strong>: 3 AZ реплікація автоматично</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">
+        Durability ≠ Backup!<br>
+        Backup захищає від логічних помилок (видалення даних).<br>
+        Durability захищає від апаратних збоїв.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 17 — ACID приклад повний
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">17 / 45</span>
+  <h2>ACID — Повний приклад: переказ грошей</h2>
+  <div class="two-col">
+    <pre style="font-size:0.52em;"><code class="language-sql">-- Стан: Аліса: 1000 грн, Боб: 300 грн
+
+BEGIN;
+
+  -- A (Atomicity): обидві операції або обидві ні
+  UPDATE accounts SET balance = balance - 500
+  WHERE id = 'alice';          -- Alice: 1000 → 500
+
+  UPDATE accounts SET balance = balance + 500
+  WHERE id = 'bob';            -- Bob:    300 → 800
+
+  -- C (Consistency): перевірка CHECK balance >= 0
+  -- I (Isolation): інші транзакції не бачать
+  --                проміжних значень
+
+COMMIT;
+-- D (Durability): WAL → на диск → OK клієнту
+
+-- Результат: Alice=500, Bob=800, сума=1300 ✅</code></pre>
+    <div>
+      <h3>Якщо збій між UPDATE 1 і UPDATE 2:</h3>
+      <div class="box box-bad" style="margin-bottom:0.5em;">
+        <h4>❌ Без ACID</h4>
+        Alice: 500 (знято), Bob: 300 (не додано)<br>
+        500 грн зникли зі системи!
+      </div>
+      <div class="box box-good">
+        <h4>✅ З ACID (Atomicity)</h4>
+        ROLLBACK → Alice: 1000, Bob: 300<br>
+        Система залишається в консистентному стані.<br>
+        Клієнт отримує помилку і може спробувати знову.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 18 — BASE огляд
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">18 / 45</span>
+  <h2>BASE — Модель NoSQL-систем</h2>
+  <div class="three-col">
+    <div class="box">
+      <h4>B — Basically Available</h4>
+      Система завжди відповідає на запити,<br>навіть якщо деякі вузли недоступні.<br>
+      Може повернути часткові або застарілі дані.
+    </div>
+    <div class="box">
+      <h4>S — Soft state</h4>
+      Стан системи може змінюватись навіть без нових записів.<br>
+      Реплікація "в процесі" — дані на різних вузлах тимчасово різні.
+    </div>
+    <div class="box">
+      <h4>E — Eventually consistent</h4>
+      З часом усі репліки синхронізуються і повернуть однакові дані.<br>
+      "З часом" = зазвичай мілісекунди–секунди.
+    </div>
+  </div>
+  <div class="note" style="margin-top:0.6em;">
+    "Ми гарантуємо відповідь, але не гарантуємо, що вона містить найсвіжіші дані"
+  </div>
+  <p style="font-size:0.72em; margin-top:0.4em; color:var(--muted);">
+    BASE = компроміс між консистентністю та доступністю на користь доступності та масштабованості.
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 19 — Eventually Consistent приклад
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">19 / 45</span>
+  <h2>Eventually Consistent — як це виглядає</h2>
+  <div class="two-col">
+    <pre style="font-size:0.52em;"><code class="language-text">Сценарій: користувач змінює аватар у соцмережі
+
+t=0ms  Користувач завантажує новий аватар
+t=1ms  Запис у Primary Region (US-East) ✅
+t=1ms  Відповідь клієнту "успішно" ✅
+
+-- Реплікація відбувається асинхронно --
+
+t=50ms Запит з Europe → EU-replica (стара версія!)
+       Відображається старий аватар 😕
+
+t=200ms EU-replica отримала оновлення
+t=200ms+ Усі бачать новий аватар ✅
+
+→ "Eventually consistent" = 200ms в даному випадку</code></pre>
+    <div>
+      <h3>Коли прийнятно?</h3>
+      <div class="box box-good" style="margin-bottom:0.5em;">
+        <h4>✅ Прийнятно</h4>
+        <ul>
+          <li>Соцмережі (аватар, пости)</li>
+          <li>Кількість лайків</li>
+          <li>Каталог товарів</li>
+          <li>Статистика перегляду</li>
+        </ul>
+      </div>
+      <div class="box box-bad">
+        <h4>❌ Неприйнятно</h4>
+        <ul>
+          <li>Банківські перекази</li>
+          <li>Медичні записи</li>
+          <li>Складські залишки (ecommerce)</li>
+          <li>Бронювання квитків</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 20 — ACID vs BASE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">20 / 45</span>
+  <h2>ACID vs BASE — порівняння</h2>
+  <table>
+    <tr><th>Аспект</th><th>ACID</th><th>BASE</th></tr>
+    <tr><td>Консистентність</td><td><span class="tag-good">Сильна</span> — завжди</td><td><span class="tag-warn">Слабка</span> — з часом</td></tr>
+    <tr><td>Доступність</td><td>Може <span class="tag-warn">блокувати</span> (locks)</td><td><span class="tag-good">Завжди відповідає</span></td></tr>
+    <tr><td>Масштабування</td><td><span class="tag-warn">Складне</span> горизонтальне</td><td><span class="tag-good">Природне</span> горизонтальне</td></tr>
+    <tr><td>Транзакції</td><td><span class="tag-good">Multi-table, multi-row</span></td><td><span class="tag-warn">Обмежені</span> (1 документ/партиція)</td></tr>
+    <tr><td>Приклади БД</td><td>PostgreSQL, MySQL, Oracle</td><td>Cassandra, DynamoDB, MongoDB</td></tr>
+    <tr><td>Типові use-cases</td><td>Фінанси, медицина, ERP</td><td>Соцмережі, IoT, каталоги</td></tr>
+  </table>
+  <div class="note" style="margin-top:0.5em;">
+    Сучасна тенденція: MongoDB та DynamoDB додають ACID-транзакції для окремих сценаріїв — кордони розмиваються.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 21 — CAP теорема
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">21 / 45</span>
+  <h2>CAP теорема (Брюер, 2000)</h2>
+  <div class="two-col">
+    <div>
+      <p style="font-size:0.8em;">Розподілена система <strong>не може одночасно гарантувати</strong> всі три:</p>
+      <div class="box" style="margin-bottom:0.4em;">
+        <h4>C — Consistency</h4>
+        Усі вузли бачать однакові дані в один момент часу.
+      </div>
+      <div class="box" style="margin-bottom:0.4em;">
+        <h4>A — Availability</h4>
+        Кожен запит отримує відповідь (успіх або помилка).
+      </div>
+      <div class="box">
+        <h4>P — Partition tolerance</h4>
+        Система продовжує працювати при мережевому розділенні (network partition).
+      </div>
+    </div>
+    <div>
+      <svg viewBox="0 0 260 230" width="90%" style="display:block; margin:0 auto;">
+        <polygon points="130,15 20,215 240,215" fill="none" stroke="#555" stroke-width="2"/>
+        <text x="115" y="12" fill="#f39c12" font-size="14" font-weight="bold">C</text>
+        <text x="5"   y="228" fill="#3498db" font-size="14" font-weight="bold">A</text>
+        <text x="238" y="228" fill="#2ecc71" font-size="14" font-weight="bold">P</text>
+        <!-- CA label -->
+        <text x="50" y="130" fill="#ecf0f1" font-size="11">CA</text>
+        <!-- CP label -->
+        <text x="175" y="130" fill="#ecf0f1" font-size="11">CP</text>
+        <!-- AP label -->
+        <text x="108" y="212" fill="#ecf0f1" font-size="11">AP</text>
+      </svg>
+      <div class="note" style="font-size:0.65em;">
+        P (Partition tolerance) є обов'язковим у будь-якій розподіленій системі.<br>
+        Тому реальний вибір: <strong>C або A</strong> при network partition.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 22 — CAP приклади
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">22 / 45</span>
+  <h2>CAP — Класифікація реальних БД</h2>
+  <table>
+    <tr><th>База даних</th><th>CAP клас</th><th>При partition...</th><th>AWS сервіс</th></tr>
+    <tr>
+      <td>PostgreSQL (single)</td>
+      <td><span class="pill pill-orange">CP</span></td>
+      <td>Не відповідає, поки не відновиться</td>
+      <td>RDS PostgreSQL</td>
+    </tr>
+    <tr>
+      <td>MySQL (sync repl)</td>
+      <td><span class="pill pill-orange">CP</span></td>
+      <td>Блокує записи, зберігає консистентність</td>
+      <td>RDS Multi-AZ</td>
+    </tr>
+    <tr>
+      <td>Cassandra</td>
+      <td><span class="pill pill-blue">AP</span></td>
+      <td>Завжди відповідає, може бути stale дані</td>
+      <td>Keyspaces</td>
+    </tr>
+    <tr>
+      <td>DynamoDB (eventual)</td>
+      <td><span class="pill pill-blue">AP</span></td>
+      <td>Завжди відповідає, eventually consistent</td>
+      <td>DynamoDB</td>
+    </tr>
+    <tr>
+      <td>DynamoDB (strong)</td>
+      <td><span class="pill pill-orange">CP</span></td>
+      <td>Строга консистентність, вища вартість</td>
+      <td>DynamoDB</td>
+    </tr>
+    <tr>
+      <td>CouchDB</td>
+      <td><span class="pill pill-blue">AP</span></td>
+      <td>Multi-master, eventual consistency</td>
+      <td>—</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 23 — DB як Bottleneck
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">23 / 45</span>
+  <h2>DB як Bottleneck</h2>
+  <div class="two-col">
+    <div>
+      <h3>Типові симптоми</h3>
+      <ul>
+        <li>API latency > 500 мс</li>
+        <li>CPU на DB-сервері > 80%</li>
+        <li>Черга запитів до БД зростає</li>
+        <li>"Too many connections" помилка</li>
+        <li>Disk I/O = 100%</li>
+        <li>Replication lag зростає</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Основні причини</h3>
+      <div class="box box-bad" style="margin-bottom:0.3em; font-size:0.7em;">
+        <strong>Read-heavy</strong>: 95% трафіку — читання, один Primary перевантажений
+      </div>
+      <div class="box box-bad" style="margin-bottom:0.3em; font-size:0.7em;">
+        <strong>Write-heavy</strong>: мільйони записів/сек, один вузол не справляється
+      </div>
+      <div class="box box-bad" style="margin-bottom:0.3em; font-size:0.7em;">
+        <strong>Connection exhaustion</strong>: connection pool вичерпано
+      </div>
+      <div class="box box-bad" style="font-size:0.7em;">
+        <strong>Slow queries</strong>: Full Table Scan, відсутні індекси, N+1
+      </div>
+    </div>
+  </div>
+  <div class="note">БД — найчастіший вузьке місце у веб-застосунках. Моніторинг обов'язковий.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 24 — Read-heavy Bottleneck
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">24 / 45</span>
+  <h2>Read-heavy Bottleneck</h2>
+  <div class="two-col">
+    <pre style="font-size:0.50em;"><code class="language-text">Проблема: 95% запитів — читання
+          Primary DB перевантажений
+
+ App Servers (×10)
+      │
+      ▼
+  Primary DB ← writes
+  (CPU 95%) ← reads (всі 10 серверів!)
+
+Рішення:
+
+ App Servers (×10)
+   │reads        │writes
+   ▼             ▼
+Read Replica   Primary DB
+(×3 шт)       (CPU 20%)
+   ▲
+Cache (Redis)
+(cache hit → не йде до DB)</code></pre>
+    <div>
+      <h3>Інструменти</h3>
+      <div class="box" style="margin-bottom:0.4em;">
+        <h4>Read Replicas</h4>
+        Читання розподіляється на репліки.<br>
+        Primary — тільки записи.<br>
+        AWS Aurora: до 15 реплік.
+      </div>
+      <div class="box">
+        <h4>Caching (Redis/ElastiCache)</h4>
+        Cache hit → відповідь за мікросекунди.<br>
+        Cache miss → DB → зберегти в cache.<br>
+        TTL контролює свіжість даних.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 25 — Write-heavy Bottleneck
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">25 / 45</span>
+  <h2>Write-heavy Bottleneck</h2>
+  <div class="two-col">
+    <pre style="font-size:0.50em;"><code class="language-text">Проблема: мільйони подій/сек (IoT, аналітика)
+          один PRIMARY вузол не справляється
+
+Рішення 1: Sharding
+  user_id % 3 = 0  → DB Shard 0
+  user_id % 3 = 1  → DB Shard 1
+  user_id % 3 = 2  → DB Shard 2
+
+Рішення 2: NoSQL (Cassandra/DynamoDB)
+  Оптимізовані для write-heavy за дизайном
+  Auto-sharding по partition key
+
+Рішення 3: Async writes через queue
+  App → Kafka → Consumer → DB
+  (буферизація та батч-вставка)</code></pre>
+    <div>
+      <h3>Порівняння підходів</h3>
+      <table style="font-size:0.62em;">
+        <tr><th>Підхід</th><th>Плюси</th><th>Мінуси</th></tr>
+        <tr><td>Sharding</td><td>SQL зберігається</td><td>Складні cross-shard queries</td></tr>
+        <tr><td>NoSQL</td><td>Auto-sharding</td><td>Нема SQL / ACID</td></tr>
+        <tr><td>Queue buffer</td><td>Не змінює БД</td><td>Затримка (eventual)</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 26 — Connection Bottleneck
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">26 / 45</span>
+  <h2>Connection Bottleneck</h2>
+  <div class="two-col">
+    <pre style="font-size:0.50em;"><code class="language-text">PostgreSQL: ~100–500 одночасних з'єднань
+MySQL:      ~151 за замовченням
+
+БЕЗ ПУЛУ:
+1000 Lambda functions → 1000 connections →
+"FATAL: remaining connection slots are
+ reserved for non-replication superuser"
+
+З ПУЛОМ (RDS Proxy / PgBouncer):
+1000 Lambdas → Pool (20 з'єднань) → DB ✅
+
+Формула оптимального розміру пулу:
+  pool_size = (num_cpu_cores × 2) + num_disk_spindles
+  
+  Для db.t3.medium (2 vCPU, SSD):
+  pool_size = (2 × 2) + 1 = 5 з'єднань (?!)
+  (Так, менше — краще для CPU-bound workloads)</code></pre>
+    <div>
+      <h3>AWS RDS Proxy</h3>
+      <ul>
+        <li>Повністю керований connection pooler</li>
+        <li>Serverless — масштабується автоматично</li>
+        <li>Failover без розриву клієнтських з'єднань</li>
+        <li>IAM authentication</li>
+        <li>Ідеально для Lambda + RDS</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">
+        Правило: завжди використовуй connection pool між<br>
+        serverless/stateless шаром та RDBMS
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 27 — Slow Queries
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">27 / 45</span>
+  <h2>Slow Queries — Виявлення та вирішення</h2>
+  <div class="two-col">
+    <div>
+      <h3>Як виявити</h3>
+      <pre><code class="language-sql">-- EXPLAIN ANALYZE (PostgreSQL)
+EXPLAIN ANALYZE
+SELECT * FROM orders
+WHERE customer_email = 'user@example.com';
+
+-- Seq Scan (BAD):
+-- Seq Scan on orders
+--   (cost=0.00..185432.00 rows=1)
+--   actual time=2341.209..2341.211 rows=1
+--   Buffers: shared hit=85321
+
+-- Index Scan (GOOD):
+-- Index Scan on idx_orders_email
+--   (cost=0.43..8.45 rows=1)
+--   actual time=0.112..0.113 rows=1
+--   Buffers: shared hit=4</code></pre>
+    </div>
+    <div>
+      <h3>Вирішення</h3>
+      <pre><code class="language-sql">-- Додати індекс
+CREATE INDEX CONCURRENTLY
+  idx_orders_email
+  ON orders(customer_email);
+
+-- Складений індекс (query має відповідати)
+CREATE INDEX idx_orders_user_date
+  ON orders(user_id, created_at DESC);
+
+-- Частковий індекс (тільки активні)
+CREATE INDEX idx_active_orders
+  ON orders(created_at)
+  WHERE status = 'active';</code></pre>
+      <div class="note" style="margin-top:0.4em;">
+        AWS: RDS Performance Insights показує топ-запити за навантаженням
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 28 — Стратегії масштабування
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">28 / 45</span>
+  <h2>Стратегії масштабування БД</h2>
+  <table>
+    <tr><th>Стратегія</th><th>Суть</th><th>Коли застосовувати</th><th>Складність</th></tr>
+    <tr><td><strong>Vertical Scaling</strong></td><td>Більше CPU/RAM</td><td>Перший крок, просто</td><td>🟢 Низька</td></tr>
+    <tr><td><strong>Read Replicas</strong></td><td>Репліки для читання</td><td>Read-heavy</td><td>🟢 Низька</td></tr>
+    <tr><td><strong>Caching</strong></td><td>Кеш перед БД</td><td>Повторювані reads</td><td>🟡 Середня</td></tr>
+    <tr><td><strong>Connection Pooling</strong></td><td>Пул з'єднань</td><td>Serverless + RDBMS</td><td>🟢 Низька</td></tr>
+    <tr><td><strong>Sharding</strong></td><td>Горизонтальне розбиття</td><td>Write-heavy, великі дані</td><td>🔴 Висока</td></tr>
+    <tr><td><strong>CQRS</strong></td><td>Окремі моделі read/write</td><td>Складні системи</td><td>🔴 Висока</td></tr>
+    <tr><td><strong>Func. decomposition</strong></td><td>БД per мікросервіс</td><td>Мікросервісна архітектура</td><td>🔴 Висока</td></tr>
+  </table>
+  <div class="note">Починай з простого (vertical, replicas, cache). Складне масштабування — тільки коли потрібно.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 29 — Vertical Scaling
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">29 / 45</span>
+  <h2>Vertical Scaling (Scale Up)</h2>
+  <div class="two-col">
+    <pre style="font-size:0.52em;"><code class="language-text">t1: db.t3.medium   (2 vCPU,  4 GB RAM)  ~$50/mo
+         ↓ навантаження зростає
+t2: db.t3.large    (2 vCPU,  8 GB RAM)  ~$100/mo
+         ↓
+t3: db.r6g.xlarge  (4 vCPU, 32 GB RAM)  ~$200/mo
+         ↓
+t4: db.r6g.4xlarge (16 vCPU,128 GB RAM) ~$800/mo
+         ↓
+t5: db.r6g.16xlarge(64 vCPU,512 GB RAM) ~$3200/mo
+         ↓
+         ⛔ Межа — далі нікуди (або $$$)</code></pre>
+    <div>
+      <h3>Оцінка</h3>
+      <table style="font-size:0.65em;">
+        <tr><th></th><th>Статус</th></tr>
+        <tr><td>Простота</td><td><span class="tag-good">✅ Один клік в AWS Console</span></td></tr>
+        <tr><td>Код змін</td><td><span class="tag-good">✅ Не потрібен</span></td></tr>
+        <tr><td>Вартість</td><td><span class="tag-bad">❌ Зростає нелінійно</span></td></tr>
+        <tr><td>Межа</td><td><span class="tag-bad">❌ Є фізична межа</span></td></tr>
+        <tr><td>SPOF</td><td><span class="tag-bad">❌ Single point of failure</span></td></tr>
+        <tr><td>Downtime</td><td><span class="tag-warn">⚠️ Кілька хвилин (без Aurora)</span></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 30 — Read Replicas
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">30 / 45</span>
+  <h2>Read Replicas</h2>
+  <div class="two-col">
+    <pre style="font-size:0.50em;"><code class="language-text">                ┌── Read Replica 1 (AZ-a)
+                │      ↑ App reads, reporting
+Primary ──async─┤── Read Replica 2 (AZ-b)
+(writes)        │      ↑ App reads
+                └── Read Replica 3 (cross-region)
+                       ↑ Disaster Recovery / читання EU
+
+Для запису: завжди Primary
+Для читання: Round-robin між репліками
+
+Replication Lag:
+  Асинхронна реплікація → lag може бути
+  Lag = 10ms (нормально) до кількох секунд (проблема)
+
+Якщо потрібен read-after-write:
+  → читати з Primary (або Aurora strong consistency)</code></pre>
+    <div>
+      <h3>AWS варіанти</h3>
+      <table style="font-size:0.65em;">
+        <tr><th>Сервіс</th><th>Max Replicas</th><th>Cross-region</th></tr>
+        <tr><td>RDS MySQL</td><td>5</td><td>✅</td></tr>
+        <tr><td>RDS PostgreSQL</td><td>5</td><td>✅</td></tr>
+        <tr><td>Aurora MySQL</td><td>15</td><td>✅</td></tr>
+        <tr><td>Aurora PostgreSQL</td><td>15</td><td>✅</td></tr>
+      </table>
+      <div class="note" style="margin-top:0.4em;">Aurora Replica може стати Primary при failover (~30 сек)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 31 — Sharding
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">31 / 45</span>
+  <h2>Sharding — Горизонтальне партиціювання</h2>
+  <div class="two-col">
+    <pre style="font-size:0.48em;"><code class="language-text">Ідея: розбити дані між кількома вузлами
+
+Shard Key: user_id
+
+user_id % 4 = 0  → Shard 0 (DB node 0)
+user_id % 4 = 1  → Shard 1 (DB node 1)
+user_id % 4 = 2  → Shard 2 (DB node 2)
+user_id % 4 = 3  → Shard 3 (DB node 3)
+
+Запит від user_id=42:
+  42 % 4 = 2 → Shard 2 ✅
+
+Cross-shard query (ПРОБЛЕМА):
+  SELECT COUNT(*) FROM orders
+  -- Треба питати всі 4 шарди й агрегувати 😱</code></pre>
+    <div>
+      <h3>Виклики шардингу</h3>
+      <ul style="font-size:0.78em;">
+        <li><span class="tag-bad">❌</span> Cross-shard JOINs — складні або неможливі</li>
+        <li><span class="tag-bad">❌</span> Hot shard — нерівномірний розподіл</li>
+        <li><span class="tag-bad">❌</span> Re-sharding при зростанні — болісно</li>
+        <li><span class="tag-bad">❌</span> Транзакції між шардами — дуже складно</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">
+        <strong>Порада:</strong> спочатку вертикальне масштабування та Read Replicas.
+        Шардинг — крайній захід для RDBMS. DynamoDB / Cassandra шардують автоматично.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 32 — Caching
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">32 / 45</span>
+  <h2>Caching — Паттерни кешування</h2>
+  <div class="three-col">
+    <div class="box">
+      <h4>Cache-Aside (Lazy Loading)</h4>
+      <pre style="font-size:0.85em; margin:0.2em 0;"><code class="language-text">App → Cache?
+  HIT → return
+  MISS → DB → Cache → return</code></pre>
+      <span class="tag-good">✅</span> Просто, cache тільки те що читають<br>
+      <span class="tag-bad">❌</span> Cache miss = 2 запити
+    </div>
+    <div class="box">
+      <h4>Write-Through</h4>
+      <pre style="font-size:0.85em; margin:0.2em 0;"><code class="language-text">App → Cache → DB
+(синхронно)</code></pre>
+      <span class="tag-good">✅</span> Cache завжди свіжий<br>
+      <span class="tag-bad">❌</span> Кожен запис = затримка
+    </div>
+    <div class="box">
+      <h4>Write-Behind (Write-Back)</h4>
+      <pre style="font-size:0.85em; margin:0.2em 0;"><code class="language-text">App → Cache
+(async) Cache → DB</code></pre>
+      <span class="tag-good">✅</span> Швидкий запис<br>
+      <span class="tag-bad">❌</span> Ризик втрати даних
+    </div>
+  </div>
+  <div class="note" style="margin-top:0.5em;">
+    <strong>TTL (Time-To-Live)</strong>: ключова настройка — час, після якого кеш-запис видаляється автоматично.<br>
+    Короткий TTL → свіжі дані, більше навантаження на DB. Довгий TTL → stale дані, менше навантаження.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 33 — Connection Pooling деталі
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">33 / 45</span>
+  <h2>Connection Pooling — як це працює</h2>
+  <div class="two-col">
+    <pre style="font-size:0.50em;"><code class="language-text">БЕЗ ПУЛУ (кожен запит = нове з'єднання):
+  Request → [TCP handshake] → [Auth] → [Query] → [Close]
+  Час на з'єднання: 20–100 мс (!)
+  При 1000 req/s → 1000 open connections → crash
+
+З ПУЛОМ:
+  ┌─ Pool Manager ─────────────────────┐
+  │  conn-1 ○ (idle)                   │
+  │  conn-2 ● (busy: request #42)      │
+  │  conn-3 ○ (idle)                   │
+  │  conn-4 ● (busy: request #43)      │
+  │  conn-5 ○ (idle)                   │
+  └────────────────────────────────────┘
+  Request → Pool → (очікує вільне з'єднання) → Query
+  Час: 0.1 мс (немає handshake)</code></pre>
+    <div>
+      <h3>AWS RDS Proxy</h3>
+      <ul style="font-size:0.8em;">
+        <li>Fully managed, serverless</li>
+        <li>Multiplexing: 1000 клієнтів → 10 DB connections</li>
+        <li>Failover прозорий для клієнтів</li>
+        <li>IAM + Secrets Manager integration</li>
+        <li>Підтримує: MySQL, PostgreSQL, MariaDB, Aurora</li>
+      </ul>
+      <div class="note" style="margin-top:0.5em;">
+        Особливо важливо для Lambda → RDS:
+        кожен Lambda invocation без proxy = нове з'єднання!
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 34 — Anti-patterns огляд
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">34 / 45</span>
+  <h2>Anti-patterns баз даних</h2>
+  <p style="font-size:0.8em; margin-bottom:0.4em;"><strong>Anti-pattern</strong> — поширене "рішення", яке насправді створює нові проблеми або є неефективним.</p>
+  <div class="two-col">
+    <div>
+      <h3>Топ-5 DB anti-patterns</h3>
+      <ol style="font-size:0.82em;">
+        <li>🐌 <strong>N+1 Query</strong> — N зайвих запитів замість одного JOIN</li>
+        <li>🔍 <strong>Відсутність індексів</strong> — Full Table Scan на мільйонах рядків</li>
+        <li>🧟 <strong>God Table</strong> — одна таблиця для всього</li>
+        <li>🎯 <strong>One DB for Everything</strong> — OLTP + Analytics + Cache разом</li>
+        <li>🚪 <strong>No Connection Pooling</strong> — нове з'єднання на кожен запит</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Також варто знати</h3>
+      <ul style="font-size:0.82em;">
+        <li>SELECT * замість конкретних стовпців</li>
+        <li>Зберігання файлів у БД (BLOB)</li>
+        <li>Без обмежень (constraints) — логіка тільки в app</li>
+        <li>Без backups або без тестування відновлення</li>
+        <li>Занадто рання оптимізація — шардинг без потреби</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 35 — N+1 Query
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">35 / 45</span>
+  <h2>Anti-pattern: N+1 Query</h2>
+  <div class="two-col">
+    <div>
+      <h3>❌ Проблема (N+1)</h3>
+      <pre><code class="language-python"># 1 запит: отримати список замовлень
+orders = db.query(
+    "SELECT * FROM orders LIMIT 100"
+)  # → 100 рядків
+
+# 100 запитів: для кожного замовлення
+for order in orders:
+    user = db.query(
+        f"SELECT * FROM users "
+        f"WHERE id={order.user_id}"
+    )
+    print(f"{user.name}: {order.total}")
+
+# Разом: 1 + 100 = 101 запит 😱
+# При 1000 замовлень → 1001 запит</code></pre>
+    </div>
+    <div>
+      <h3>✅ Рішення (JOIN)</h3>
+      <pre><code class="language-python"># 1 запит замість 101
+orders = db.query("""
+    SELECT o.id, o.total,
+           u.name, u.email
+    FROM orders o
+    JOIN users u ON u.id = o.user_id
+    LIMIT 100
+""")
+
+for order in orders:
+    print(f"{order.name}: {order.total}")
+
+# Або Eager Loading в ORM:
+orders = Order.query\
+    .options(joinedload(Order.user))\
+    .limit(100).all()</code></pre>
+      <div class="note" style="margin-top:0.4em;">Виявлення: Django Debug Toolbar, SQLAlchemy echo, pg_stat_statements</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 36 — No Indexes
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">36 / 45</span>
+  <h2>Anti-pattern: Відсутність індексів</h2>
+  <div class="two-col">
+    <pre style="font-size:0.50em;"><code class="language-sql">-- Таблиця: 50 млн рядків
+
+-- ❌ БЕЗ ІНДЕКСУ → Full Table Scan
+EXPLAIN ANALYZE
+SELECT * FROM events
+WHERE user_id = 42;
+
+-- Seq Scan on events
+--   (rows=50000000)
+--   actual time=8234 ms  ← 8 секунд!
+--   Buffers: shared read=652174
+
+-- ✅ З ІНДЕКСОМ
+CREATE INDEX CONCURRENTLY
+  idx_events_user_id
+  ON events(user_id);
+
+EXPLAIN ANALYZE
+SELECT * FROM events
+WHERE user_id = 42;
+
+-- Index Scan using idx_events_user_id
+--   actual time=1.234 ms  ← 1 мілісекунда!
+--   Buffers: shared hit=7</code></pre>
+    <div>
+      <h3>Типи індексів PostgreSQL</h3>
+      <table style="font-size:0.62em;">
+        <tr><th>Тип</th><th>Коли</th></tr>
+        <tr><td>B-tree (default)</td><td>=, &lt;, &gt;, BETWEEN, ORDER BY</td></tr>
+        <tr><td>Hash</td><td>Тільки = (рідко)</td></tr>
+        <tr><td>GIN</td><td>JSONB, повнотекстовий пошук, масиви</td></tr>
+        <tr><td>GiST</td><td>Геодані, range types</td></tr>
+        <tr><td>BRIN</td><td>Великі таблиці з sequential data (time series)</td></tr>
+      </table>
+      <div class="note" style="margin-top:0.4em;">
+        Індекс = прискорення читання, уповільнення запису.<br>
+        Не індексуй все підряд!
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 37 — God Table
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">37 / 45</span>
+  <h2>Anti-pattern: God Table</h2>
+  <div class="two-col">
+    <div>
+      <h3>❌ Проблема</h3>
+      <pre><code class="language-sql">-- "Одна таблиця для всього"
+CREATE TABLE entities (
+  id       INT,
+  type     VARCHAR,  -- 'user','product','order'
+  field1   VARCHAR,  -- ім'я / назва / статус
+  field2   VARCHAR,  -- email / ціна / дата
+  field3   VARCHAR,  -- телефон / категорія / ...
+  ...
+  field50  VARCHAR,
+  data     JSON  -- "all the rest"
+);
+
+-- 80% стовпців = NULL для кожного типу
+-- Неможливо додати FK constraint
+-- Неможливо нормально індексувати</code></pre>
+    </div>
+    <div>
+      <h3>✅ Рішення: нормалізація</h3>
+      <pre><code class="language-sql">-- Окремі таблиці для кожного типу
+
+CREATE TABLE users (
+  id    INT PRIMARY KEY,
+  email VARCHAR UNIQUE NOT NULL,
+  phone VARCHAR
+);
+
+CREATE TABLE products (
+  id       INT PRIMARY KEY,
+  name     VARCHAR NOT NULL,
+  price    DECIMAL(10,2) CHECK (price > 0),
+  category_id INT REFERENCES categories(id)
+);
+
+CREATE TABLE orders (
+  id         INT PRIMARY KEY,
+  user_id    INT REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT now()
+);</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 38 — One DB for Everything
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">38 / 45</span>
+  <h2>Anti-pattern: One DB for Everything</h2>
+  <div class="two-col">
+    <div>
+      <h3>❌ Проблема</h3>
+      <pre style="font-size:0.50em;"><code class="language-text">Одна PostgreSQL для всього:
+  OLTP (транзакції)     ─┐
+  OLAP (аналітика)      ─┤→ Одна DB
+  Сесії (cache-like)    ─┘
+
+Проблема:
+  Аналітичний запит (SELECT, GROUP BY, JOIN
+  на 100M рядках) → тримає блокування →
+  OLTP-транзакції чекають →
+  Затримка для користувачів!
+
+  + CPU 100% на аналітичному запиті
+  + I/O конкуренція між OLTP та OLAP</code></pre>
+    </div>
+    <div>
+      <h3>✅ Рішення: розділити</h3>
+      <div class="box" style="margin-bottom:0.4em; font-size:0.72em;">
+        <h4>OLTP → RDS / Aurora</h4>
+        Транзакції, оновлення, ACID
+      </div>
+      <div class="box" style="margin-bottom:0.4em; font-size:0.72em;">
+        <h4>Analytics (OLAP) → Redshift / Athena</h4>
+        Аналітичні запити, агрегації, звіти
+      </div>
+      <div class="box" style="margin-bottom:0.4em; font-size:0.72em;">
+        <h4>Sessions / Cache → ElastiCache (Redis)</h4>
+        Sub-ms reads, TTL, pub/sub
+      </div>
+      <div class="box" style="font-size:0.72em;">
+        <h4>Full-text Search → OpenSearch</h4>
+        Пошук по тексту, фасетний пошук
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 39 — No Connection Pooling (anti-pattern)
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">39 / 45</span>
+  <h2>Anti-pattern: No Connection Pooling</h2>
+  <div class="two-col">
+    <pre style="font-size:0.50em;"><code class="language-python"># ❌ ПОГАНО: нове з'єднання на кожен запит
+# (типова помилка в Lambda/serverless)
+
+def lambda_handler(event, context):
+    conn = psycopg2.connect(
+        host="my-rds.xxx.us-east-1.rds.amazonaws.com",
+        database="mydb",
+        user="admin",
+        password="secret"
+    )  # ← TCP + Auth = 50-100ms КОЖЕН РАЗ!
+
+    cur = conn.cursor()
+    cur.execute("SELECT ...")
+    results = cur.fetchall()
+    conn.close()  # ← з'єднання знищується
+    return results
+
+# 1000 одночасних Lambda → 1000 connections
+# FATAL: remaining connection slots reserved</code></pre>
+    <div>
+      <h3>✅ Рішення</h3>
+      <pre style="font-size:0.50em;"><code class="language-python"># Варіант 1: AWS RDS Proxy (рекомендовано)
+# Просто змінити host на RDS Proxy endpoint:
+conn = psycopg2.connect(
+    host="my-proxy.proxy-xxx.rds.amazonaws.com",
+    ...
+)
+# RDS Proxy мультиплексує з'єднання
+
+# Варіант 2: connection pool в коді
+# (для EC2 / ECS / не-serverless)
+from psycopg2 import pool
+connection_pool = pool.SimpleConnectionPool(
+    minconn=2, maxconn=10, ...
+)
+conn = connection_pool.getconn()
+# ... use conn ...
+connection_pool.putconn(conn)  # повертаємо</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 40 — Amazon RDS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">40 / 45</span>
+  <h2>Amazon RDS — Managed Relational DB</h2>
+  <div class="two-col">
+    <div>
+      <h3>Підтримувані рушії</h3>
+      <table style="font-size:0.65em;">
+        <tr><th>Рушій</th><th>Версії</th></tr>
+        <tr><td>PostgreSQL</td><td>13, 14, 15, 16</td></tr>
+        <tr><td>MySQL</td><td>5.7, 8.0</td></tr>
+        <tr><td>MariaDB</td><td>10.x</td></tr>
+        <tr><td>Oracle</td><td>SE2, EE</td></tr>
+        <tr><td>SQL Server</td><td>SE, EE, Web, Express</td></tr>
+      </table>
+      <h3 style="margin-top:0.5em;">Ключові можливості</h3>
+      <ul style="font-size:0.78em;">
+        <li>Автоматичні бекапи (до 35 днів)</li>
+        <li>Point-in-Time Recovery</li>
+        <li>RDS Proxy — connection pooling</li>
+        <li>Encryption at rest (KMS) + in transit (SSL)</li>
+        <li>Performance Insights (monitoring)</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Multi-AZ — High Availability</h3>
+      <pre style="font-size:0.50em;"><code class="language-text">  Primary (AZ-a)
+       │ sync replication
+       ↓
+  Standby (AZ-b)  ← не приймає reads!
+                     тільки failover
+
+При відмові Primary:
+  → Failover ≈ 60–120 сек
+  → DNS endpoint перемикається
+  → Standby стає новим Primary
+  → Автоматично, без зміни коду
+
+Read Replicas (окремо від Multi-AZ):
+  → Для читання
+  → Асинхронна реплікація
+  → До 5 реплік (RDS), 15 (Aurora)</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 41 — Amazon Aurora
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">41 / 45</span>
+  <h2>Amazon Aurora</h2>
+  <p style="font-size:0.78em; margin-bottom:0.3em;">MySQL/PostgreSQL-сумісна хмарна СУБД, розроблена AWS. ~5× швидше MySQL, ~3× швидше PostgreSQL.</p>
+  <div class="two-col">
+    <pre style="font-size:0.48em;"><code class="language-text">  Aurora Architecture:
+
+  Writer Instance (Primary)
+     │
+     │ write
+     ▼
+  ┌──────────────────────────────────┐
+  │       Shared Distributed         │
+  │         Storage Layer            │
+  │   6 копій у 3 AZ автоматично     │
+  │   (2 копії на кожну AZ)          │
+  │   Commit при 4/6 підтвердженнях  │
+  └──────────────────────────────────┘
+     ▲              ▲
+     │ read         │ read
+  Reader 1        Reader 2
+  (Replica AZ-b)  (Replica AZ-c)
+  ... до 15 реплік ...</code></pre>
+    <div>
+      <h3>Ключові переваги над RDS</h3>
+      <table style="font-size:0.62em;">
+        <tr><th>Аспект</th><th>RDS</th><th>Aurora</th></tr>
+        <tr><td>Failover</td><td>60–120 сек</td><td>~30 сек</td></tr>
+        <tr><td>Storage</td><td>Один диск (Multi-AZ = 2)</td><td>6 копій у 3 AZ</td></tr>
+        <tr><td>Read Replicas</td><td>до 5</td><td>до 15</td></tr>
+        <tr><td>Serverless</td><td>❌</td><td>✅ Aurora Serverless v2</td></tr>
+        <tr><td>Global DB</td><td>Cross-region replica</td><td>Aurora Global Database</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 42 — Amazon DynamoDB
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">42 / 45</span>
+  <h2>Amazon DynamoDB</h2>
+  <p style="font-size:0.78em; margin-bottom:0.3em;">Serverless NoSQL — Key-Value + Document. Повністю керований AWS. Sub-millisecond latency at any scale.</p>
+  <div class="two-col">
+    <div>
+      <h3>Концепції</h3>
+      <table style="font-size:0.62em;">
+        <tr><th>Поняття</th><th>Опис</th></tr>
+        <tr><td>Table</td><td>Колекція items</td></tr>
+        <tr><td>Item</td><td>Рядок (JSON, до 400 KB)</td></tr>
+        <tr><td>Partition Key</td><td>Обов'язковий; визначає шард</td></tr>
+        <tr><td>Sort Key</td><td>Опціональний; сортування в партиції</td></tr>
+        <tr><td>GSI</td><td>Global Secondary Index — запит по іншому ключу</td></tr>
+        <tr><td>LSI</td><td>Local Secondary Index — інший sort key</td></tr>
+        <tr><td>Streams</td><td>Real-time change capture (CDC)</td></tr>
+        <tr><td>DAX</td><td>DynamoDB Accelerator — in-memory cache, мікросекунди</td></tr>
+        <tr><td>Global Tables</td><td>Multi-region active-active реплікація</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Capacity Modes</h3>
+      <div class="box box-info" style="margin-bottom:0.4em; font-size:0.72em;">
+        <h4>On-Demand</h4>
+        Платиш за запит. Ідеально для unpredictable workloads.
+        Немає планування capacity.
+      </div>
+      <div class="box" style="font-size:0.72em;">
+        <h4>Provisioned + Auto-scaling</h4>
+        Задаєш RCU/WCU (Read/Write Capacity Units).
+        Дешевше при передбачуваному навантаженні.
+      </div>
+      <div class="note" style="margin-top:0.5em;">
+        Use-cases: сесії, кошик покупок, gaming leaderboards,
+        IoT telemetry, serverless backends
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 43 — Amazon ElastiCache
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">43 / 45</span>
+  <h2>Amazon ElastiCache</h2>
+  <p style="font-size:0.78em; margin-bottom:0.3em;">Managed in-memory caching. Два варіанти: Redis та Memcached.</p>
+  <div class="two-col">
+    <div>
+      <h3>Redis</h3>
+      <ul style="font-size:0.78em;">
+        <li>Структури даних: strings, lists, sets, sorted sets, hashes</li>
+        <li>Persistence: RDB (snapshot) + AOF (append-only file)</li>
+        <li>Pub/Sub для real-time messaging</li>
+        <li>Cluster Mode: шардинг даних між вузлами</li>
+        <li>Multi-AZ з автоматичним failover</li>
+        <li>Lua scripting, transactions</li>
+      </ul>
+      <div class="note" style="margin-top:0.4em;">
+        <strong>Use-cases Redis:</strong> кешування, сесії, черги,
+        leaderboards (sorted sets), pub/sub
+      </div>
+    </div>
+    <div>
+      <h3>Memcached</h3>
+      <ul style="font-size:0.78em;">
+        <li>Простий KV кеш — string → string</li>
+        <li>Multi-threaded: краще використовує CPU</li>
+        <li>❌ Немає persistence</li>
+        <li>❌ Немає replication</li>
+        <li>❌ Немає Pub/Sub</li>
+      </ul>
+      <div class="note" style="margin-top:0.4em;">
+        <strong>Коли Memcached:</strong> простий кеш, максимальна
+        швидкість, не потрібна персистентність
+      </div>
+      <div class="box" style="margin-top:0.4em; font-size:0.72em;">
+        <h4>Рекомендація</h4>
+        У більшості випадків обирайте Redis —
+        він надає більше можливостей.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 44 — AWS DB Services Overview
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">44 / 45</span>
+  <h2>AWS Database Services — Огляд</h2>
+  <table>
+    <tr><th>Сервіс</th><th>Тип</th><th>Рушій</th><th>Use-case</th></tr>
+    <tr>
+      <td><strong>RDS</strong></td>
+      <td>RDBMS managed</td>
+      <td>PostgreSQL, MySQL, Oracle, SQL Server, MariaDB</td>
+      <td>Стандартні SQL застосунки, OLTP</td>
+    </tr>
+    <tr>
+      <td><strong>Aurora</strong></td>
+      <td>RDBMS high-perf</td>
+      <td>MySQL / PostgreSQL compatible</td>
+      <td>Великі OLTP навантаження, HA</td>
+    </tr>
+    <tr>
+      <td><strong>DynamoDB</strong></td>
+      <td>NoSQL KV + Doc</td>
+      <td>Власний</td>
+      <td>Serverless, scale, low latency</td>
+    </tr>
+    <tr>
+      <td><strong>ElastiCache</strong></td>
+      <td>In-memory cache</td>
+      <td>Redis / Memcached</td>
+      <td>Кешування, сесії, pub/sub</td>
+    </tr>
+    <tr>
+      <td><strong>Redshift</strong></td>
+      <td>Data Warehouse</td>
+      <td>PostgreSQL-based</td>
+      <td>OLAP, BI, аналітика</td>
+    </tr>
+    <tr>
+      <td><strong>DocumentDB</strong></td>
+      <td>Document NoSQL</td>
+      <td>MongoDB-compatible</td>
+      <td>JSON-документи, каталоги</td>
+    </tr>
+    <tr>
+      <td><strong>Neptune</strong></td>
+      <td>Graph</td>
+      <td>Gremlin / SPARQL / openCypher</td>
+      <td>Графи зв'язків, knowledge graphs</td>
+    </tr>
+    <tr>
+      <td><strong>Keyspaces</strong></td>
+      <td>Wide-Column NoSQL</td>
+      <td>Cassandra-compatible</td>
+      <td>IoT, time series, лог-дані</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 45 — Підсумки
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">45 / 45</span>
+  <h2>Ключові висновки</h2>
+  <div class="two-col" style="font-size:0.82em;">
+    <ol>
+      <li><strong>RDBMS</strong> = ACID + SQL + вертикальне масштабування → фінанси, ERP</li>
+      <li><strong>NoSQL</strong> = BASE + гнучкість + горизонтальне масштабування → scale, IoT</li>
+      <li><strong>CAP</strong>: при network partition обирай C або A. P — обов'язкове.</li>
+      <li><strong>Read-heavy</strong> → Read Replicas + Cache (ElastiCache)</li>
+      <li><strong>Write-heavy</strong> → Sharding або NoSQL (DynamoDB/Cassandra)</li>
+      <li><strong>Connection bottleneck</strong> → Connection Pool (RDS Proxy)</li>
+      <li><strong>Slow query</strong> → EXPLAIN ANALYZE → Indexes</li>
+      <li><strong>Уникай</strong>: N+1, God Table, One DB for Everything</li>
+    </ol>
+    <div>
+      <div class="box" style="margin-bottom:0.5em; font-size:0.85em;">
+        <h4>AWS Cheat Sheet</h4>
+        <ul>
+          <li><strong>RDS / Aurora</strong> → SQL, ACID, OLTP</li>
+          <li><strong>DynamoDB</strong> → serverless NoSQL, scale</li>
+          <li><strong>ElastiCache</strong> → кеш, сесії, pub/sub</li>
+          <li><strong>Redshift</strong> → аналітика (OLAP)</li>
+        </ul>
+      </div>
+      <div class="note" style="font-size:0.75em;">
+        "Use the right tool for the right job" —<br>
+        не існує однієї БД яка оптимальна для всього.
+      </div>
+    </div>
+  </div>
+  <hr style="border-color:#555; margin:0.8em auto; width:50%;"/>
+  <p style="text-align:center; color:var(--muted); font-size:0.7em;">
+    Лекція 7 · Хмарні технології інформаційних систем · Бакалавр ІТ · 3 курс
+  </p>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<!-- Reveal.js scripts -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: false,   // custom slide numbers used
+    transition: 'slide',
+    transitionSpeed: 'fast',
+    controls: true,
+    progress: true,
+    center: false,
+    width: 1750,
+    height: 900,
+    margin: 0.03,
+    minScale: 0.2,
+    maxScale: 2.0,
+    plugins: [ RevealHighlight, RevealNotes ],
+  });
+</script>
+</body>
+</html>
