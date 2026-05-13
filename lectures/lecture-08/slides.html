@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Лекція 8 — Масштабування та відмовостійкість</title>
+
+  <!-- Reveal.js CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <!-- Syntax highlighting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+
+  <style>
+    :root {
+      --accent:  #f39c12;
+      --success: #2ecc71;
+      --danger:  #e74c3c;
+      --info:    #3498db;
+      --muted:   #95a5a6;
+    }
+
+    /* Base font reduced so slides fit at 1920×1080 */
+    .reveal { font-size: 34px; }
+
+    .reveal h1, .reveal h2 { color: var(--accent); }
+    .reveal h3 { color: #ecf0f1; }
+
+    .reveal section { text-align: left; }
+    .reveal .title-slide { text-align: center; }
+
+    /* Tighter heading margins */
+    .reveal h2 { margin: 0 0 0.3em; font-size: 1.2em; }
+    .reveal h3 { margin: 0 0 0.25em; font-size: 0.95em; }
+
+    .reveal pre { font-size: 0.50em; box-shadow: none; margin: 0.3em 0; }
+    .reveal code { font-size: 0.72em; }
+    .reveal table { font-size: 0.68em; width: 100%; }
+    .reveal table th { background: #2c3e50; color: var(--accent); }
+    .reveal table td, .reveal table th { border: 1px solid #444; padding: 4px 8px; }
+
+    /* Allow per-slide vertical scroll when content still overflows */
+    .reveal .slides section {
+      overflow-y: auto;
+      max-height: 100%;
+      box-sizing: border-box;
+    }
+
+    .tag-good { color: var(--success); font-weight: bold; }
+    .tag-bad  { color: var(--danger);  font-weight: bold; }
+    .tag-warn { color: var(--accent);  font-weight: bold; }
+    .tag-info { color: var(--info);    font-weight: bold; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.68em;
+      font-weight: bold;
+      margin: 2px;
+    }
+    .pill-orange { background: #e67e22; }
+    .pill-blue   { background: #2980b9; }
+    .pill-green  { background: #27ae60; }
+    .pill-gray   { background: #7f8c8d; }
+    .pill-red    { background: #c0392b; }
+    .pill-purple { background: #8e44ad; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7em;
+    }
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.6em;
+    }
+
+    .box {
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 0.4em 0.8em;
+      background: rgba(255,255,255,0.05);
+      font-size: 0.76em;
+    }
+    .box h4 { margin: 0 0 0.3em; color: var(--accent); font-size: 0.95em; }
+
+    .box-good { border-color: var(--success); background: rgba(46,204,113,0.07); }
+    .box-bad  { border-color: var(--danger);  background: rgba(231,76,60,0.07);  }
+    .box-info { border-color: var(--info);    background: rgba(52,152,219,0.07); }
+
+    .note {
+      border-left: 4px solid var(--accent);
+      padding: 0.3em 0.7em;
+      background: rgba(243,156,18,0.1);
+      font-size: 0.70em;
+      margin-top: 0.4em;
+    }
+
+    .slide-num {
+      position: absolute;
+      top: 8px;
+      right: 14px;
+      font-size: 0.44em;
+      color: #666;
+    }
+
+    ul li { margin-bottom: 0.18em; }
+    ol li  { margin-bottom: 0.18em; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 1 — TITLE
+════════════════════════════════════════════════════════════ -->
+<section class="title-slide">
+  <h1 style="font-size:1.6em;">Лекція 8</h1>
+  <h2 style="font-size:1.3em; color:#ecf0f1;">Масштабування та відмовостійкість</h2>
+  <hr style="border-color:#555; margin:1em auto; width:60%;" />
+  <p style="color:var(--muted); font-size:0.8em;">
+    Курс «Хмарні технології інформаційних систем»<br>
+    Бакалавр ІТ · 3 курс · 2 години
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 2 — AGENDA
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">2 / 40</span>
+  <h2>Agenda</h2>
+  <div class="two-col" style="font-size:0.82em;">
+    <ol>
+      <li>Чому важливо?</li>
+      <li>Single Point of Failure (SPOF)</li>
+      <li>Виявлення та усунення SPOF</li>
+      <li>Load Balancing patterns</li>
+      <li>Health Checks</li>
+    </ol>
+    <ol start="6">
+      <li>Auto Scaling стратегії</li>
+      <li>Disaster Recovery (DR)</li>
+      <li>Blue/Green Deployment</li>
+      <li>AWS приклади: ALB, ASG</li>
+      <li>Підсумки</li>
+    </ol>
+  </div>
+  <div class="note">Підготовка: пригадайте основи мережевих протоколів та AWS EC2</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 3 — Чому важливо?
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">3 / 40</span>
+  <h2>Чому важливо?</h2>
+  <h3>Реальні інциденти:</h3>
+  <table>
+    <tr><th>Компанія</th><th>Рік</th><th>Причина</th><th>Downtime</th><th>Втрати</th></tr>
+    <tr><td>GitHub</td><td>2018</td><td>Network partition</td><td>24 год</td><td>Репутація</td></tr>
+    <tr><td>AWS S3</td><td>2017</td><td>Human error</td><td>4 год</td><td>~$150M</td></tr>
+    <tr><td>Facebook</td><td>2021</td><td>BGP misconfiguration</td><td>6 год</td><td>~$100M</td></tr>
+  </table>
+  <h3 style="margin-top:0.5em;">Статистика:</h3>
+  <ul style="font-size:0.85em;">
+    <li>1 година downtime для e-commerce = <span class="tag-bad">$100K–$5M</span> втрат</li>
+    <li>99.9% uptime = <span class="tag-warn">8.76 год</span> downtime/рік</li>
+    <li>99.99% uptime = <span class="tag-good">52 хв</span> downtime/рік</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 4 — SPOF визначення
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">4 / 40</span>
+  <h2>SPOF — визначення</h2>
+  <p><strong>Single Point of Failure (SPOF)</strong> — компонент системи, відмова якого призводить до повної зупинки системи.</p>
+  <pre><code>┌──────────────────┐
+│   Load Balancer  │ ← SPOF!
+└────────┬─────────┘
+         │
+    ┌────┴────┐
+    │         │
+┌───▼──┐  ┌──▼───┐
+│ App1 │  │ App2 │
+└──────┘  └──────┘</code></pre>
+  <h3>Наслідки:</h3>
+  <ul style="font-size:0.85em;">
+    <li>❌ Повна недоступність сервісу</li>
+    <li>❌ Втрата доходів</li>
+    <li>❌ Погана репутація</li>
+    <li>❌ Порушення SLA</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 5 — Типові SPOF
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">5 / 40</span>
+  <h2>Типові SPOF</h2>
+  <table>
+    <tr><th>Компонент</th><th>Приклад SPOF</th><th>Наслідок</th></tr>
+    <tr><td><strong>Сервер</strong></td><td>Один web-сервер</td><td>App недоступний</td></tr>
+    <tr><td><strong>База даних</strong></td><td>Single DB instance</td><td>Неможливість читання/запису</td></tr>
+    <tr><td><strong>Load Balancer</strong></td><td>Один LB</td><td>Трафік не розподіляється</td></tr>
+    <tr><td><strong>DNS</strong></td><td>Один DNS provider</td><td>Домен не резолвиться</td></tr>
+    <tr><td><strong>Мережа</strong></td><td>Один ISP</td><td>Повна ізоляція</td></tr>
+    <tr><td><strong>AZ</strong></td><td>Всі ресурси в одній AZ</td><td>Відмова при AZ outage</td></tr>
+    <tr><td><strong>Region</strong></td><td>Один AWS регіон</td><td>Відмова при regional outage</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 6 — Виявлення SPOF
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">6 / 40</span>
+  <h2>Виявлення SPOF</h2>
+  <h3>Питання для аналізу архітектури:</h3>
+  <ol style="font-size:0.88em;">
+    <li>✓ Що станеться, якщо цей компонент відмовить?</li>
+    <li>✓ Чи є резервна копія цього компонента?</li>
+    <li>✓ Чи може система працювати без нього?</li>
+    <li>✓ Чи розподілені компоненти між AZ/регіонами?</li>
+    <li>✓ Чи є автоматичне failover?</li>
+  </ol>
+  <h3>Інструменти:</h3>
+  <ul style="font-size:0.85em;">
+    <li><span class="pill pill-blue">Fault Tree Analysis (FTA)</span></li>
+    <li><span class="pill pill-green">Architecture Review</span></li>
+    <li><span class="pill pill-purple">Chaos Engineering</span> (Netflix Chaos Monkey)</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 7 — Усунення SPOF
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">7 / 40</span>
+  <h2>Усунення SPOF</h2>
+  <h3>Стратегії:</h3>
+  <pre><code>1. Redundancy (надлишковість)
+   Single server → Multiple servers
+
+2. Реплікація
+   Master DB → Master + Replicas
+
+3. Multi-AZ
+   One AZ → Multiple AZs
+
+4. Multi-Region
+   One Region → Multiple Regions
+
+5. Automated Failover
+   Manual switch → Auto failover</code></pre>
+  <div class="note">
+    <strong>Принцип:</strong> Кожен критичний компонент має мати N+1 або N+2 резервування.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 8 — від SPOF до HA
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">8 / 40</span>
+  <h2>Приклад: від SPOF до HA</h2>
+  <h3>Еволюція архітектури:</h3>
+  <pre><code>КРОК 1: Single Server (SPOF)
+[Users] → [Single EC2] → [Single RDS]
+  ❌ Будь-яка відмова = повний downtime
+
+КРОК 2: Multi-AZ
+[Users] → [ALB] → [EC2-AZa, EC2-AZb] → [RDS Multi-AZ]
+  ✓ Failover при відмові AZ
+
+КРОК 3: Multi-Region
+[Users] → [Route53]
+           ├→ [Region US: ALB → EC2s → RDS]
+           └→ [Region EU: ALB → EC2s → RDS replica]
+  ✓ DR при відмові регіону</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 9 — Load Balancing навіщо?
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">9 / 40</span>
+  <h2>Load Balancing — навіщо?</h2>
+  <h3>Три основні цілі:</h3>
+  <div class="three-col" style="font-size:0.80em;">
+    <div class="box box-info">
+      <h4>1. Розподіл навантаження</h4>
+      <ul>
+        <li>Рівномірний розподіл трафіку</li>
+        <li>Уникнення перевантаження</li>
+      </ul>
+    </div>
+    <div class="box box-good">
+      <h4>2. Відмовостійкість</h4>
+      <ul>
+        <li>Виключення unhealthy серверів</li>
+        <li>Продовження роботи</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>3. Масштабування</h4>
+      <ul>
+        <li>Додавання серверів без downtime</li>
+        <li>Elastic capacity</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 10 — Типи Load Balancers
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">10 / 40</span>
+  <h2>Типи Load Balancers</h2>
+  <table>
+    <tr><th>Тип</th><th>Рівень OSI</th><th>Протокол</th><th>Use Case</th></tr>
+    <tr><td><strong>L4 (Network)</strong></td><td>Transport (4)</td><td>TCP, UDP</td><td>High throughput, низька затримка</td></tr>
+    <tr><td><strong>L7 (Application)</strong></td><td>Application (7)</td><td>HTTP, HTTPS</td><td>Routing по URL/headers</td></tr>
+  </table>
+  <div class="two-col" style="margin-top:0.5em;">
+    <div>
+      <h3>Layer 4:</h3>
+      <pre><code>Client → NLB (IP:port)
+         ↓
+       Backend
+• Дуже швидкий
+• Не бачить HTTP</code></pre>
+    </div>
+    <div>
+      <h3>Layer 7:</h3>
+      <pre><code>Client → ALB (HTTP)
+         ↓
+       Backend
+• URL-based routing
+• SSL termination</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 11 — Алгоритми балансування
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">11 / 40</span>
+  <h2>Алгоритми балансування</h2>
+  <pre><code>1. Round Robin
+   Request 1 → Server A
+   Request 2 → Server B
+   Request 3 → Server C
+   Request 4 → Server A ...
+
+2. Least Connections
+   → Сервер з найменшою кількістю активних з'єднань
+
+3. IP Hash
+   hash(client_ip) % num_servers → Server X
+   (той самий клієнт → той самий сервер)
+
+4. Weighted Round Robin
+   Server A (weight=3): 60% трафіку
+   Server B (weight=2): 40% трафіку</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 12 — Session Affinity
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">12 / 40</span>
+  <h2>Session Affinity (Sticky Sessions)</h2>
+  <p><strong>Проблема:</strong> Додаток зберігає сесію локально на сервері.</p>
+  <div class="two-col">
+    <div class="box box-bad">
+      <h4>Without Sticky:</h4>
+      <pre><code>Request 1 (login)
+  → Server A (session ✓)
+Request 2 (profile)
+  → Server B (немає сесії!) ❌</code></pre>
+    </div>
+    <div class="box box-good">
+      <h4>With Sticky:</h4>
+      <pre><code>Request 1 (login)
+  → Server A (cookie ✓)
+Request 2 (profile)
+  → Server A (сесія ✓)</code></pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:0.4em;">
+    <strong>Краще рішення:</strong> Зовнішнє сховище сесій (Redis, DynamoDB)
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 13 — AWS ALB
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">13 / 40</span>
+  <h2>AWS Application Load Balancer (ALB)</h2>
+  <pre><code class="yaml">Target Groups:
+  - web-servers: [EC2-1, EC2-2, EC2-3]
+  - api-servers: [EC2-4, EC2-5]
+
+Rules:
+  - Path /api/* → api-servers
+  - Path /* → web-servers
+  - Host api.example.com → api-servers
+  - Host www.example.com → web-servers</code></pre>
+  <h3>Features:</h3>
+  <ul style="font-size:0.82em;">
+    <li>✓ HTTP/2, WebSockets, gRPC</li>
+    <li>✓ SSL/TLS termination</li>
+    <li>✓ Sticky sessions (cookie-based)</li>
+    <li>✓ WAF integration</li>
+    <li>✓ Lambda targets</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 14 — AWS NLB
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">14 / 40</span>
+  <h2>AWS Network Load Balancer (NLB)</h2>
+  <h3>Характеристики:</h3>
+  <ul style="font-size:0.85em;">
+    <li><span class="tag-good">Ultra-low latency</span> (~100 microseconds)</li>
+    <li><span class="tag-good">Millions req/sec</span></li>
+    <li><strong>Static IP</strong> (один IP на AZ)</li>
+    <li><strong>TCP, UDP, TLS</strong></li>
+    <li><strong>Preserve source IP</strong></li>
+  </ul>
+  <h3>Use cases:</h3>
+  <div class="two-col" style="font-size:0.80em;">
+    <ul>
+      <li>Gaming (UDP)</li>
+      <li>IoT (MQTT)</li>
+      <li>Extreme performance</li>
+    </ul>
+    <ul>
+      <li>Non-HTTP protocols</li>
+      <li>Need static IP for whitelisting</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 15 — Паттерни розгортання LB
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">15 / 40</span>
+  <h2>Паттерни розгортання LB</h2>
+  <pre><code>1. Single AZ (не рекомендується)
+   [LB in AZ-a] → [EC2s in AZ-a]
+   ❌ SPOF на рівні AZ
+
+2. Multi-AZ (стандарт)
+   [LB in AZ-a, AZ-b] → [EC2s in AZ-a, AZ-b]
+   ✓ Failover між AZ
+
+3. Global Load Balancing
+   [Route53 Geo-routing]
+     ├→ US-EAST: [ALB] → [EC2s]
+     └→ EU-WEST: [ALB] → [EC2s]
+   ✓ Latency-based routing</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 16 — Health Checks що це?
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">16 / 40</span>
+  <h2>Health Checks — що це?</h2>
+  <p><strong>Health Check</strong> — автоматична перевірка працездатності сервісу.</p>
+  <pre><code>Load Balancer перевіряє кожні 30 сек:
+  GET /health → 200 OK?
+    ✓ Healthy → route traffic
+    ❌ Unhealthy → stop traffic</code></pre>
+  <h3>Навіщо?</h3>
+  <ul style="font-size:0.85em;">
+    <li>Автоматично виключає проблемні інстанси</li>
+    <li>Запобігає помилкам "connection refused"</li>
+    <li>Працює разом з Auto Scaling</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 17 — Типи Health Checks
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">17 / 40</span>
+  <h2>Типи Health Checks</h2>
+  <pre><code>1. Shallow (поверхневий)
+   GET /health → 200 OK
+   • Просто перевіряє, що процес живий
+   • Швидко, але не інформативно
+
+2. Deep (глибокий)
+   GET /health → перевіряє:
+     ✓ DB connection
+     ✓ Redis connection
+     ✓ Disk space > 10%
+   • Більш надійно
+   • Повільніше
+
+3. Dependency Checks
+   GET /ready → перевіряє всі залежності
+   • Kubernetes-style: /live vs /ready</code></pre>
+  <div class="note">
+    <strong>Рекомендація:</strong> Shallow для production traffic, Deep для monitoring.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 18 — Параметри Health Checks
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">18 / 40</span>
+  <h2>Параметри Health Checks</h2>
+  <pre><code class="yaml">HealthCheck:
+  Path: /health
+  Protocol: HTTP
+  Port: 80
+  Interval: 30 sec           # Як часто перевіряти
+  Timeout: 5 sec             # Скільки чекати відповіді
+  HealthyThreshold: 2        # 2 успішні → healthy
+  UnhealthyThreshold: 3      # 3 невдалі → unhealthy</code></pre>
+  <h3>Важливо:</h3>
+  <ul style="font-size:0.85em;">
+    <li><code>Timeout < Interval</code></li>
+    <li>Не робити HC занадто частими (навантаження)</li>
+    <li>UnhealthyThreshold > 1 (уникати false positives)</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 19 — Health Check Endpoints
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">19 / 40</span>
+  <h2>Health Check Endpoints</h2>
+  <pre><code class="python"># Liveness (чи працює процес?)
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+# Readiness (чи готовий приймати трафік?)
+@app.get("/ready")
+def ready():
+    if db.is_connected() and cache.is_connected():
+        return {"status": "ready"}
+    else:
+        return {"status": "not ready"}, 503
+
+# Detailed (для debugging)
+@app.get("/health/detailed")
+def health_detailed():
+    return {
+        "db": check_db(),
+        "cache": check_cache(),
+        "disk": check_disk()
+    }</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 20 — AWS Health Checks
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">20 / 40</span>
+  <h2>AWS Health Checks</h2>
+  <div class="two-col" style="font-size:0.78em;">
+    <div class="box">
+      <h4>1. ELB Health Checks</h4>
+      <p>ALB/NLB → перевіряє targets кожні 30 сек<br>
+      Unhealthy → stop routing traffic</p>
+    </div>
+    <div class="box">
+      <h4>2. ASG Health Checks</h4>
+      <p>Types: EC2 (instance running?), ELB (traffic healthy?)<br>
+      Unhealthy → terminate & replace</p>
+    </div>
+    <div class="box">
+      <h4>3. Route53 Health Checks</h4>
+      <p>Перевіряє endpoint доступність<br>
+      Unhealthy → failover to secondary</p>
+    </div>
+    <div class="box">
+      <h4>4. CloudWatch + SNS</h4>
+      <p>Custom metrics → Alarm → notify team</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 21 — Auto Scaling концепція
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">21 / 40</span>
+  <h2>Auto Scaling — концепція</h2>
+  <p><strong>Auto Scaling</strong> — автоматичне масштабування кількості ресурсів під навантаження.</p>
+  <pre><code>High Load:
+  9:00 AM  ████████████  → 10 instances
+
+Low Load:
+  3:00 AM  ██            → 2 instances</code></pre>
+  <h3>Переваги:</h3>
+  <ul style="font-size:0.85em;">
+    <li>✓ Оптимізація вартості (платите за використання)</li>
+    <li>✓ Автоматична реакція на зміни навантаження</li>
+    <li>✓ Висока доступність</li>
+  </ul>
+  <div class="note"><strong>Умова:</strong> Додаток має бути <strong>stateless</strong>.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 22 — Вертикальне vs Горизонтальне
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">22 / 40</span>
+  <h2>Вертикальне vs Горизонтальне масштабування</h2>
+  <table>
+    <tr><th></th><th>Vertical (Scale Up/Down)</th><th>Horizontal (Scale Out/In)</th></tr>
+    <tr><td><strong>Що</strong></td><td>Збільшення CPU/RAM інстанса</td><td>Додавання/видалення інстансів</td></tr>
+    <tr><td><strong>Межі</strong></td><td>Є ліміт (max EC2)</td><td>Практично необмежене</td></tr>
+    <tr><td><strong>Downtime</strong></td><td>Потрібен (reboot)</td><td>Без downtime</td></tr>
+    <tr><td><strong>Складність</strong></td><td>Просто</td><td>Потрібен LB, stateless</td></tr>
+    <tr><td><strong>Вартість</strong></td><td>Дорожче (нелінійна)</td><td>Дешевше (лінійна)</td></tr>
+    <tr><td><strong>AWS</strong></td><td>Зміна instance type</td><td>Auto Scaling Group</td></tr>
+  </table>
+  <div class="note">
+    <strong>Рекомендація:</strong> Horizontal для web/API, Vertical для legacy/stateful систем.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 23 — Метрики масштабування
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">23 / 40</span>
+  <h2>Метрики масштабування</h2>
+  <pre><code>1. CPU Utilization
+   CPU > 70% → scale out
+   CPU < 30% → scale in
+
+2. Memory Utilization
+   Memory > 80% → scale out
+
+3. Network I/O
+   NetworkIn/Out > threshold
+
+4. Custom Metrics (найкраще!)
+   • Queue depth (SQS messages)
+   • Request latency (p99 > 500ms)
+   • Active connections
+   • Business metrics (orders/sec)</code></pre>
+  <div class="note">
+    <strong>Важливо:</strong> CPU — простий, але не завжди правильний. Custom metrics точніші.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 24 — Scaling Policies
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">24 / 40</span>
+  <h2>Scaling Policies</h2>
+  <pre><code class="yaml">1. Target Tracking
+   "Тримай CPU на рівні 50%"
+   → ASG сам додає/видаляє інстанси
+
+2. Step Scaling
+   CPU 50-60%  → +1 instance
+   CPU 60-80%  → +2 instances
+   CPU > 80%   → +3 instances
+
+3. Scheduled Scaling
+   8:00 AM (перед робочим днем) → scale to 10
+   6:00 PM (після роботи)        → scale to 2
+
+4. Predictive Scaling
+   ML-based прогноз на основі історії</code></pre>
+  <div class="note"><strong>Best:</strong> Target Tracking для більшості сценаріїв.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 25 — Cooldown Period
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">25 / 40</span>
+  <h2>Cooldown Period</h2>
+  <p><strong>Проблема:</strong> Flapping (постійне scale out/in)</p>
+  <div class="two-col">
+    <div class="box box-bad">
+      <h4>Without Cooldown:</h4>
+      <pre><code>10:00 → CPU 80% → +1
+10:01 → CPU 85% → +1
+10:02 → CPU 90% → +1
+...
+10:05 → CPU 20% → remove all! ❌</code></pre>
+    </div>
+    <div class="box box-good">
+      <h4>With Cooldown:</h4>
+      <pre><code>Cooldown = 300 sec (5 хв)
+
+10:00 → CPU 80% → +1
+        WAIT 5 min
+10:05 → check again</code></pre>
+    </div>
+  </div>
+  <div class="note">
+    <strong>Scale-out:</strong> Короткий cooldown (швидко)<br>
+    <strong>Scale-in:</strong> Довгий cooldown (обережно)
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 26 — AWS ASG
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">26 / 40</span>
+  <h2>AWS Auto Scaling Groups (ASG)</h2>
+  <pre><code class="yaml">AutoScalingGroup:
+  LaunchTemplate: my-app-template  # AMI, instance type, userdata
+  MinSize: 2                        # Мінімум
+  MaxSize: 10                       # Максимум
+  DesiredCapacity: 4                # Поточна ціль
+
+  VPCZoneIdentifier:
+    - subnet-az-a
+    - subnet-az-b
+    - subnet-az-c
+
+  TargetGroups:
+    - my-alb-target-group
+
+  HealthCheckType: ELB
+  HealthCheckGracePeriod: 300</code></pre>
+  <h3>Features:</h3>
+  <ul style="font-size:0.82em;">
+    <li>✓ Автоматичний баланс між AZ</li>
+    <li>✓ Заміна unhealthy instances</li>
+    <li>✓ Integration з ELB</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 27 — Приклад ASG політики
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">27 / 40</span>
+  <h2>Приклад ASG політики</h2>
+  <pre><code class="yaml">ScalingPolicies:
+  - Name: scale-out
+    AdjustmentType: ChangeInCapacity
+    ScalingAdjustment: +2
+    Trigger:
+      MetricName: CPUUtilization
+      Threshold: 70
+      ComparisonOperator: GreaterThanThreshold
+      Period: 60 sec
+      EvaluationPeriods: 2  # 2 periods підряд
+    Cooldown: 180
+
+  - Name: scale-in
+    AdjustmentType: ChangeInCapacity
+    ScalingAdjustment: -1
+    Trigger:
+      MetricName: CPUUtilization
+      Threshold: 30
+      ComparisonOperator: LessThanThreshold
+      Period: 300 sec
+      EvaluationPeriods: 3
+    Cooldown: 600  # Довший для scale-in</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 28 — Best Practices ASG
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">28 / 40</span>
+  <h2>Best Practices ASG</h2>
+  <div class="two-col" style="font-size:0.78em;">
+    <div>
+      <div class="box box-good">
+        <h4>✓ DO</h4>
+        <ul>
+          <li><strong>Stateless додатки</strong> — Зберігай сесії в Redis/DynamoDB</li>
+          <li><strong>Graceful shutdown</strong> — SIGTERM → close connections</li>
+          <li><strong>Fast startup</strong> — Use AMI з софтом</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="box box-bad">
+        <h4>✗ DON'T</h4>
+        <ul>
+          <li><strong>Manual capacity</strong> — Use Desired Capacity тільки для override</li>
+          <li><strong>Skip testing</strong> — Load test перед production</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="note" style="margin-top:0.5em;">
+    HealthCheckGracePeriod для warm-up · CloudWatch metrics + SNS notifications
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 29 — DR визначення
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">29 / 40</span>
+  <h2>Disaster Recovery (DR) — визначення</h2>
+  <p><strong>Disaster Recovery</strong> — процес відновлення IT-інфраструктури після катастрофи.</p>
+  <h3>Типи катастроф:</h3>
+  <ul style="font-size:0.85em;">
+    <li>🔥 Пожежа в data center</li>
+    <li>💧 Повінь</li>
+    <li>🌪️ Стихійне лихо</li>
+    <li>💻 Кібератака (ransomware)</li>
+    <li>🧑‍💻 Human error (rm -rf /)</li>
+    <li>🏢 Відмова всього регіону (AWS outage)</li>
+  </ul>
+  <div class="note"><strong>Мета DR:</strong> Мінімізувати RTO та RPO.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 30 — RTO vs RPO
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">30 / 40</span>
+  <h2>RTO vs RPO</h2>
+  <pre><code>         Normal Operation
+              │
+              ▼
+         🔥 DISASTER 🔥
+              │
+              ├─────────────┬────────────────┐
+              │             │                │
+            Disaster      Recovery        Fully
+            Occurs        Starts         Operational
+
+              ◄────RPO────►
+                            ◄─────RTO─────►</code></pre>
+  <div class="two-col" style="font-size:0.82em; margin-top:0.4em;">
+    <div class="box box-info">
+      <h4>RPO (Recovery Point Objective)</h4>
+      <p>Максимально допустима <strong>втрата даних</strong> (години/хвилини)<br>
+      "Скільки даних можемо втратити?"</p>
+    </div>
+    <div class="box box-info">
+      <h4>RTO (Recovery Time Objective)</h4>
+      <p>Максимально допустимий <strong>час відновлення</strong><br>
+      "Скільки часу можемо бути offline?"</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 31 — DR стратегії огляд
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">31 / 40</span>
+  <h2>DR стратегії — огляд</h2>
+  <table>
+    <tr><th>Стратегія</th><th>RTO</th><th>RPO</th><th>Вартість</th><th>Use Case</th></tr>
+    <tr><td><strong>Backup & Restore</strong></td><td>Години–дні</td><td>Години</td><td>$</td><td>Некритичні системи</td></tr>
+    <tr><td><strong>Pilot Light</strong></td><td>Хвилини–години</td><td>Хвилини</td><td>$$</td><td>Середня критичність</td></tr>
+    <tr><td><strong>Warm Standby</strong></td><td>Хвилини</td><td>Секунди–хв</td><td>$$$</td><td>Важливі системи</td></tr>
+    <tr><td><strong>Multi-Site (Hot)</strong></td><td>Секунди</td><td>≈0</td><td>$$$$</td><td>Mission-critical</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 32 — Backup & Restore
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">32 / 40</span>
+  <h2>Backup & Restore</h2>
+  <p><strong>Концепція:</strong> Регулярні бекапи → Відновлення при disaster.</p>
+  <pre><code>Normal Operation:
+  [Production in Region A]
+     ↓ nightly backup
+  [S3 snapshots in Region B]
+
+Disaster:
+  [Region A unavailable ❌]
+     ↓ restore (manual)
+  [Rebuild in Region B] → 4-12 hours</code></pre>
+  <h3>AWS інструменти:</h3>
+  <ul style="font-size:0.82em;">
+    <li>EBS snapshots → cross-region copy</li>
+    <li>RDS automated backups → multi-region</li>
+    <li>S3 Cross-Region Replication</li>
+  </ul>
+  <div class="note">
+    <strong>RTO:</strong> 4–24 години | <strong>RPO:</strong> 1–24 години | <strong>Вартість:</strong> Найдешевше
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 33 — Pilot Light / Warm Standby
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">33 / 40</span>
+  <h2>Pilot Light / Warm Standby</h2>
+  <div class="two-col" style="font-size:0.75em;">
+    <div>
+      <h3>Pilot Light:</h3>
+      <pre><code>Region A (Primary):
+  [ALB + EC2s + RDS]
+
+Region B (Pilot Light):
+  [RDS replica (read-only)]
+  [AMI ready, EC2s off]
+
+Disaster →
+  Launch EC2s from AMI →
+  Promote RDS replica →
+  30-60 min</code></pre>
+    </div>
+    <div>
+      <h3>Warm Standby:</h3>
+      <pre><code>Region A (Primary):
+  [10 EC2 instances]
+  [db.r5.2xlarge]
+
+Region B (Warm):
+  [2 EC2 instances running]
+  [db.r5.large]
+
+Disaster →
+  Scale up Region B →
+  10-30 min</code></pre>
+    </div>
+  </div>
+  <div class="note">
+    <strong>RTO:</strong> 10–60 хв | <strong>RPO:</strong> Секунди–хвилини | <strong>Вартість:</strong> Середня
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 34 — Multi-Site
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">34 / 40</span>
+  <h2>Multi-Site (Hot Standby)</h2>
+  <p><strong>Концепція:</strong> Два повністю активні середовища, трафік розподілений.</p>
+  <pre><code>         [Route53]
+         /        \
+        /          \
+   Region A      Region B
+   (Active)      (Active)
+   [Full stack]  [Full stack]
+
+   Real-time data replication</code></pre>
+  <h3>Реалізація:</h3>
+  <ul style="font-size:0.82em;">
+    <li>Route53 weighted routing (50%/50%)</li>
+    <li>Aurora Global Database (replication lag < 1 sec)</li>
+    <li>DynamoDB Global Tables</li>
+  </ul>
+  <div class="note">
+    <strong>RTO:</strong> Секунди | <strong>RPO:</strong> ≈0 | <strong>Вартість:</strong> Подвійна інфраструктура (найдорожче)
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 35 — Blue/Green концепція
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">35 / 40</span>
+  <h2>Blue/Green Deployment — концепція</h2>
+  <p><strong>Два ідентичні середовища:</strong></p>
+  <ul style="font-size:0.85em;">
+    <li><strong>Blue:</strong> Поточна production версія</li>
+    <li><strong>Green:</strong> Нова версія</li>
+  </ul>
+  <pre><code>BEFORE:
+  [Users] → [Route53] → [Blue Environment v1.0] ← 100% traffic
+                        [Green Environment v2.0] ← 0% traffic
+
+AFTER (switch):
+  [Users] → [Route53] → [Blue Environment v1.0] ← 0% traffic
+                        [Green Environment v2.0] ← 100% traffic</code></pre>
+  <h3>Переваги:</h3>
+  <ul style="font-size:0.82em;">
+    <li>✓ Zero-downtime deployment</li>
+    <li>✓ Instant rollback (просто перемкнути назад)</li>
+    <li>✓ Можливість тестувати Green перед switch</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 36 — Процес Blue/Green
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">36 / 40</span>
+  <h2>Процес Blue/Green</h2>
+  <pre><code>1. Deploy нову версію в Green
+   Blue (v1.0) ← 100% traffic
+   Green (v2.0) ← 0% traffic (testing only)
+
+2. Тестування Green
+   Smoke tests, integration tests
+   Internal team testing
+
+3. Поступовий перехід (canary)
+   Blue ← 90% traffic
+   Green ← 10% traffic
+   → Monitor metrics
+
+4. Повний перехід
+   Blue ← 0%
+   Green ← 100%
+
+5. Тримати Blue standby (2-24 год)
+   На випадок rollback
+
+6. Деактивувати Blue (або він стає новим standby)</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 37 — Переваги та недоліки Blue/Green
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">37 / 40</span>
+  <h2>Переваги та недоліки Blue/Green</h2>
+  <div class="two-col">
+    <div class="box box-good">
+      <h4>Переваги:</h4>
+      <ul style="font-size:0.90em;">
+        <li>✅ Zero downtime</li>
+        <li>✅ Instant rollback (секунди)</li>
+        <li>✅ Production-like testing</li>
+        <li>✅ Зменшує ризик deployment</li>
+      </ul>
+    </div>
+    <div class="box box-bad">
+      <h4>Недоліки:</h4>
+      <ul style="font-size:0.90em;">
+        <li>❌ Подвійна інфраструктура</li>
+        <li>❌ DB schema migrations складні</li>
+        <li>❌ Stateful applications</li>
+      </ul>
+    </div>
+  </div>
+  <h3 style="margin-top:0.5em;">Коли використовувати:</h3>
+  <ul style="font-size:0.85em;">
+    <li>Mission-critical додатки</li>
+    <li>Frequent deployments</li>
+    <li>Коли потрібен instant rollback</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 38 — AWS реалізація Blue/Green
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">38 / 40</span>
+  <h2>AWS реалізація Blue/Green</h2>
+  <pre><code class="yaml">Option 1: Route53 Weighted Routing
+  Route53:
+    blue.example.com → Weight: 0
+    green.example.com → Weight: 100
+
+Option 2: ALB Target Groups
+  ALB:
+    Rules:
+      - Default → Blue Target Group (weight: 0)
+      - Default → Green Target Group (weight: 100)
+
+Option 3: ECS/EKS
+  ECS Service:
+    TaskDefinition: v1 (Blue)  → DesiredCount: 0
+    TaskDefinition: v2 (Green) → DesiredCount: 10
+
+Option 4: Elastic Beanstalk
+  eb deploy --staged
+  eb swap blue-env green-env</code></pre>
+  <div class="note">
+    <strong>Рекомендація:</strong> ALB Target Groups (найпростіше в AWS).
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 39 — Ключові висновки
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">39 / 40</span>
+  <h2>Ключові висновки</h2>
+  <h3>Принципи надійних систем:</h3>
+  <div class="two-col" style="font-size:0.80em;">
+    <ol>
+      <li><strong>✓ Eliminate SPOF</strong> — Кожен компонент має redundancy</li>
+      <li><strong>✓ Multi-AZ by default</strong> — Мінімум 2 AZ для production</li>
+      <li><strong>✓ Load Balancing</strong> — Розподіл навантаження + failover</li>
+      <li><strong>✓ Health Checks</strong> — Автоматичне виявлення проблем</li>
+    </ol>
+    <ol start="5">
+      <li><strong>✓ Auto Scaling</strong> — Elastic capacity під навантаження</li>
+      <li><strong>✓ Plan for DR</strong> — Визначити RTO/RPO → вибрати стратегію</li>
+      <li><strong>✓ Automate Everything</strong> — Ручні процеси = human errors</li>
+    </ol>
+  </div>
+  <hr style="border-color:#555; margin:0.8em auto; width:50%;"/>
+  <p style="text-align:center; color:var(--muted); font-size:0.7em;">
+    Лекція 8 · Хмарні технології інформаційних систем · Бакалавр ІТ · 3 курс
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 40 — Питання та ресурси
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">40 / 40</span>
+  <h2>Питання та ресурси</h2>
+  <h3>Питання для самоперевірки:</h3>
+  <ol style="font-size:0.80em;">
+    <li>Як виявити SPOF у вашій архітектурі?</li>
+    <li>Коли використовувати ALB vs NLB?</li>
+    <li>Яка різниця між /health та /ready endpoints?</li>
+    <li>Як вибрати між Pilot Light та Warm Standby?</li>
+    <li>Які умови потрібні для успішного Blue/Green deployment?</li>
+  </ol>
+  <h3>Ресурси:</h3>
+  <ul style="font-size:0.78em;">
+    <li>AWS Well-Architected Framework</li>
+    <li>AWS Architecture Center</li>
+    <li>"Site Reliability Engineering" (Google)</li>
+    <li>Netflix Tech Blog</li>
+    <li>Martin Fowler — Microservices patterns</li>
+  </ul>
+  <div class="note"><strong>Наступна лекція:</strong> Моніторинг та Observability</div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<!-- Reveal.js scripts -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: false,   // custom slide numbers used
+    transition: 'slide',
+    transitionSpeed: 'fast',
+    controls: true,
+    progress: true,
+    center: false,
+    width: 1750,
+    height: 1080,
+    margin: 0.04,
+    plugins: [RevealHighlight, RevealNotes]
+  });
+</script>
+</body>
+</html>
