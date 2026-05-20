@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Лекція 9 — Cloud-native та контейнеризація</title>
+
+  <!-- Reveal.js CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <!-- Syntax highlighting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+
+  <style>
+    :root {
+      --accent:  #f39c12;
+      --success: #2ecc71;
+      --danger:  #e74c3c;
+      --info:    #3498db;
+      --muted:   #95a5a6;
+    }
+
+    /* Base font reduced so slides fit at 1920×1080 */
+    .reveal { font-size: 34px; }
+
+    .reveal h1, .reveal h2 { color: var(--accent); }
+    .reveal h3 { color: #ecf0f1; }
+
+    .reveal section { text-align: left; }
+    .reveal .title-slide { text-align: center; }
+
+    /* Tighter heading margins */
+    .reveal h2 { margin: 0 0 0.3em; font-size: 1.2em; }
+    .reveal h3 { margin: 0 0 0.25em; font-size: 0.95em; }
+
+    .reveal pre { font-size: 0.50em; box-shadow: none; margin: 0.3em 0; }
+    .reveal code { font-size: 0.72em; }
+    .reveal table { font-size: 0.68em; width: 100%; }
+    .reveal table th { background: #2c3e50; color: var(--accent); }
+    .reveal table td, .reveal table th { border: 1px solid #444; padding: 4px 8px; }
+
+    /* Allow per-slide vertical scroll when content still overflows */
+    .reveal .slides section {
+      overflow-y: auto;
+      max-height: 100%;
+      box-sizing: border-box;
+    }
+
+    .tag-good { color: var(--success); font-weight: bold; }
+    .tag-bad  { color: var(--danger);  font-weight: bold; }
+    .tag-warn { color: var(--accent);  font-weight: bold; }
+    .tag-info { color: var(--info);    font-weight: bold; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.68em;
+      font-weight: bold;
+      margin: 2px;
+    }
+    .pill-orange { background: #e67e22; }
+    .pill-blue   { background: #2980b9; }
+    .pill-green  { background: #27ae60; }
+    .pill-gray   { background: #7f8c8d; }
+    .pill-red    { background: #c0392b; }
+    .pill-purple { background: #8e44ad; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7em;
+    }
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.6em;
+    }
+
+    .box {
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 0.4em 0.8em;
+      background: rgba(255,255,255,0.05);
+      font-size: 0.76em;
+    }
+    .box h4 { margin: 0 0 0.3em; color: var(--accent); font-size: 0.95em; }
+
+    .box-good { border-color: var(--success); background: rgba(46,204,113,0.07); }
+    .box-bad  { border-color: var(--danger);  background: rgba(231,76,60,0.07);  }
+    .box-info { border-color: var(--info);    background: rgba(52,152,219,0.07); }
+
+    .note {
+      border-left: 4px solid var(--accent);
+      padding: 0.3em 0.7em;
+      background: rgba(243,156,18,0.1);
+      font-size: 0.70em;
+      margin-top: 0.4em;
+    }
+
+    .slide-num {
+      position: absolute;
+      top: 8px;
+      right: 14px;
+      font-size: 0.44em;
+      color: #666;
+    }
+
+    ul li { margin-bottom: 0.18em; }
+    ol li  { margin-bottom: 0.18em; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 1 — TITLE
+════════════════════════════════════════════════════════════ -->
+<section class="title-slide">
+  <h1 style="font-size:1.6em;">Лекція 9</h1>
+  <h2 style="font-size:1.3em; color:#ecf0f1;">Cloud-native та контейнеризація</h2>
+  <hr style="border-color:#555; margin:1em auto; width:60%;" />
+  <p style="color:var(--muted); font-size:0.8em;">
+    Курс «Хмарні технології інформаційних систем»<br>
+    Бакалавр ІТ · 3 курс · 2 години
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 2 — AGENDA
+════════════════════════════════════════════════════════════ -->
+<section>
+  <span class="slide-num">2 / 40</span>
+  <h2>Agenda</h2>
+  <div class="two-col" style="font-size:0.82em;">
+    <ol>
+      <li>Еволюція архітектури</li>
+      <li>Cloud-native principles</li>
+      <li>12-Factor App</li>
+      <li>Microservices архітектура</li>
+      <li>Containers — що це та навіщо?</li>
+    </ol>
+    <ol start="6">
+      <li>Docker концепція</li>
+      <li>Kubernetes основи</li>
+      <li>Event-driven systems</li>
+      <li>AWS: ECS, EKS, Lambda</li>
+      <li>Підсумки</li>
+    </ol>
+  </div>
+  <div class="note">Підготовка: пригадайте основи Linux, процеси, networking</div>
+</section>
+
+<!-- SLIDE 3 -->
+<section>
+  <span class="slide-num">3 / 40</span>
+  <h2>Еволюція архітектури</h2>
+  <pre><code>1990s: MONOLITH
+  [Single big application]
+  ❌ Scaling = scale everything
+  ❌ Update = redeploy everything
+
+2000s: SOA (Service-Oriented Architecture)
+  [Services + ESB]
+  ⚠️ Still coupled through ESB
+
+2010s: MICROSERVICES
+  [Independent services]
+  ✓ Independent deployment
+  ⚠️ Complexity
+
+2015+: CLOUD-NATIVE
+  [Microservices + Containers + Orchestration + DevOps]
+  ✓ Full automation
+  ✓ Resilience
+  ✓ Scalability</code></pre>
+</section>
+
+<!-- SLIDE 4 -->
+<section>
+  <span class="slide-num">4 / 40</span>
+  <h2>Cloud-native — визначення</h2>
+  <p><strong>CNCF (Cloud Native Computing Foundation) definition:</strong></p>
+  <blockquote style="font-size:0.85em; font-style:italic;">
+    Cloud-native technologies empower organizations to build and run <strong>scalable applications</strong>
+    in modern, <strong>dynamic environments</strong> such as public, private, and hybrid clouds.
+  </blockquote>
+  <h3>Характеристики:</h3>
+  <ul style="font-size:0.85em;">
+    <li>🐳 <strong>Containers</strong> — portable, isolated runtime</li>
+    <li>🔄 <strong>Microservices</strong> — loosely coupled services</li>
+    <li>🎯 <strong>Orchestration</strong> — automated deployment & scaling</li>
+    <li>📊 <strong>Observability</strong> — metrics, logs, traces</li>
+    <li>🚀 <strong>DevOps & CI/CD</strong> — automation first</li>
+    <li>♻️ <strong>Resilience</strong> — design for failure</li>
+  </ul>
+</section>
+
+<!-- SLIDE 5 -->
+<section>
+  <span class="slide-num">5 / 40</span>
+  <h2>12-Factor App</h2>
+  <h3>Методологія для побудови SaaS-додатків:</h3>
+  <pre><code>I. Codebase
+   Один codebase в version control, багато deploys
+
+II. Dependencies
+   Явне оголошення (package.json, requirements.txt)
+
+III. Config
+   Зберігай в environment variables, не в коді
+
+IV. Backing services
+   Treat as attached resources (DB, cache, queue)
+
+V. Build, release, run
+   Strict separation of stages
+
+VI. Processes
+   Stateless! Store state in backing services</code></pre>
+  <p style="font-size:0.75em;">(продовження: 7. Port binding, 8. Concurrency, 9. Disposability, 10. Dev/prod parity, 11. Logs, 12. Admin processes)</p>
+</section>
+
+<!-- SLIDE 6 -->
+<section>
+  <span class="slide-num">6 / 40</span>
+  <h2>Cloud-native Patterns</h2>
+  <table>
+    <tr><th>Pattern</th><th>Що це</th><th>Приклад</th></tr>
+    <tr><td><strong>API-first</strong></td><td>Всі компоненти через REST/gRPC API</td><td>Microservices communication</td></tr>
+    <tr><td><strong>Stateless</strong></td><td>Не зберігай стан локально</td><td>Session в Redis, не в memory</td></tr>
+    <tr><td><strong>Disposability</strong></td><td>Fast startup + graceful shutdown</td><td>SIGTERM handling</td></tr>
+    <tr><td><strong>Immutable Infrastructure</strong></td><td>Never update, always replace</td><td>New container image, not patch</td></tr>
+    <tr><td><strong>Declarative</strong></td><td>Describe desired state, not steps</td><td>K8s manifests, Terraform</td></tr>
+  </table>
+</section>
+
+<!-- SLIDE 7 -->
+<section>
+  <span class="slide-num">7 / 40</span>
+  <h2>Immutable Infrastructure</h2>
+  <p><strong>Що це?</strong> Серверна інфраструктура, яка <strong>ніколи не змінюється</strong> після deployment.</p>
+  <div class="two-col">
+    <div class="box box-bad">
+      <h4>Traditional (Mutable)</h4>
+      <pre><code>Server 1.0
+  ↓ apt update
+  ↓ patch
+Server 1.1
+
+❌ Configuration drift
+❌ "Works on my machine"</code></pre>
+    </div>
+    <div class="box box-good">
+      <h4>Immutable</h4>
+      <pre><code>Server 1.0
+  ↓ Deploy Server 1.1
+  ↓ Terminate Server 1.0
+Done
+
+✓ Consistent environments
+✓ Easy rollback
+✓ No snowflakes</code></pre>
+    </div>
+  </div>
+  <div class="note"><strong>Реалізація:</strong> Docker images, AMI, golden images</div>
+</section>
+
+<!-- SLIDE 8 -->
+<section>
+  <span class="slide-num">8 / 40</span>
+  <h2>Observability</h2>
+  <h3>Три стовпи (Three Pillars):</h3>
+  <div class="three-col" style="font-size:0.78em;">
+    <div class="box box-info">
+      <h4>1. METRICS</h4>
+      <p>Що відбувається?<br>
+      CPU, Memory, Request rate<br>
+      → Prometheus, CloudWatch</p>
+    </div>
+    <div class="box box-info">
+      <h4>2. LOGS</h4>
+      <p>Деталі події<br>
+      Application logs, errors<br>
+      → ELK Stack, CloudWatch Logs</p>
+    </div>
+    <div class="box box-info">
+      <h4>3. TRACES</h4>
+      <p>Де час витрачається?<br>
+      Distributed tracing<br>
+      → Jaeger, X-Ray, OpenTelemetry</p>
+    </div>
+  </div>
+  <div class="note" style="margin-top:0.5em;"><strong>Разом = повна картина системи</strong></div>
+</section>
+
+<!-- SLIDE 9 -->
+<section>
+  <span class="slide-num">9 / 40</span>
+  <h2>Cloud-native vs Traditional</h2>
+  <table>
+    <tr><th></th><th>Traditional</th><th>Cloud-native</th></tr>
+    <tr><td><strong>Architecture</strong></td><td>Monolith</td><td>Microservices</td></tr>
+    <tr><td><strong>Deployment</strong></td><td>VM, bare metal</td><td>Containers</td></tr>
+    <tr><td><strong>Scaling</strong></td><td>Vertical (bigger VM)</td><td>Horizontal (more containers)</td></tr>
+    <tr><td><strong>Updates</strong></td><td>Downtime, manual</td><td>Zero-downtime, automated</td></tr>
+    <tr><td><strong>Recovery</strong></td><td>Manual intervention</td><td>Self-healing</td></tr>
+    <tr><td><strong>Infrastructure</strong></td><td>Mutable (patch)</td><td>Immutable (replace)</td></tr>
+    <tr><td><strong>Cost</strong></td><td>Fixed capacity</td><td>Pay-per-use</td></tr>
+  </table>
+  <div class="note"><strong>Виклики:</strong> Складність, навчання команди, debugging distributed systems</div>
+</section>
+
+<!-- SLIDE 10 -->
+<section>
+  <span class="slide-num">10 / 40</span>
+  <h2>Microservices — що це?</h2>
+  <p><strong>Визначення:</strong> Архітектурний стиль, де додаток будується як набір <strong>малих, незалежних сервісів</strong>, кожен:</p>
+  <ul style="font-size:0.85em;">
+    <li>Працює у власному процесі</li>
+    <li>Спілкується через lightweight protocols (HTTP, gRPC, messaging)</li>
+    <li>Deployиться незалежно</li>
+    <li>Організований навколо business capabilities</li>
+    <li>Може мати власну базу даних</li>
+  </ul>
+  <h3>Bounded Context (DDD):</h3>
+  <pre><code>Order Service → Orders DB
+Payment Service → Payments DB
+Inventory Service → Inventory DB</code></pre>
+</section>
+
+<!-- SLIDE 11 -->
+<section>
+  <span class="slide-num">11 / 40</span>
+  <h2>Monolith vs Microservices</h2>
+  <table>
+    <tr><th></th><th>Monolith</th><th>Microservices</th></tr>
+    <tr><td><strong>Deployment</strong></td><td>Весь додаток разом</td><td>Кожен сервіс окремо</td></tr>
+    <tr><td><strong>Scaling</strong></td><td>Scale all</td><td>Scale тільки потрібні сервіси</td></tr>
+    <tr><td><strong>Database</strong></td><td>Спільна БД</td><td>Database per service</td></tr>
+    <tr><td><strong>Team</strong></td><td>Одна велика команда</td><td>Маленькі ("pizza team" 6-8)</td></tr>
+    <tr><td><strong>Technology</strong></td><td>Один stack</td><td>Tech diversity (Java, Python, Go)</td></tr>
+    <tr><td><strong>Complexity</strong></td><td>Operational (легко)</td><td>Distributed (складно)</td></tr>
+    <tr><td><strong>Testing</strong></td><td>Integration легко</td><td>E2E складно</td></tr>
+  </table>
+  <div class="note">
+    <strong>Коли Monolith?</strong> Startup, невелика команда<br>
+    <strong>Коли Microservices?</strong> Scale, large teams, mature domain
+  </div>
+</section>
+
+<!-- SLIDE 12 -->
+<section>
+  <span class="slide-num">12 / 40</span>
+  <h2>Переваги Microservices</h2>
+  <pre><code>✅ Independent Deployment
+   Оновлюй Payment Service без торкання Orders
+
+✅ Technology Diversity
+   User Service = Node.js
+   Analytics Service = Python (ML libs)
+   Legacy Service = Java
+
+✅ Fine-grained Scaling
+   Black Friday → scale Order Service x10
+   → Payment Service x5
+   → Catalog Service x2
+
+✅ Fault Isolation
+   Recommendation Service down →
+   Core shopping still works
+
+✅ Team Autonomy
+   Кожна команда відповідає за свій сервіс</code></pre>
+</section>
+
+<!-- SLIDE 13 -->
+<section>
+  <span class="slide-num">13 / 40</span>
+  <h2>Недоліки Microservices</h2>
+  <pre><code>❌ Distributed System Complexity
+   Network calls, latency, partial failures
+
+❌ Data Consistency
+   No distributed transactions
+   Eventual consistency only
+
+❌ Testing Complexity
+   End-to-end testing складне
+
+❌ Operational Overhead
+   More services = more to monitor, deploy, manage
+
+❌ Network Overhead
+   Internal calls через мережу (vs in-memory)
+
+❌ Versioning & Compatibility
+   Backward compatibility API важлива</code></pre>
+  <div class="note"><strong>Рекомендація:</strong> Почни з monolith, переходь на microservices коли є потреба</div>
+</section>
+
+<!-- SLIDE 14 -->
+<section>
+  <span class="slide-num">14 / 40</span>
+  <h2>Communication Patterns</h2>
+  <div class="two-col">
+    <div class="box">
+      <h4>Synchronous (Sync)</h4>
+      <pre><code>Client → REST API → Service B
+         (wait)
+
+Client → gRPC → Service B
+         (wait)
+
+✓ Simple, immediate response
+❌ Coupling, cascading failures</code></pre>
+    </div>
+    <div class="box">
+      <h4>Asynchronous (Async)</h4>
+      <pre><code>Service A → Message Queue → Service B
+            (non-blocking)
+
+Service A → Event Bus → Service B, C, D
+            (pub/sub)
+
+✓ Decoupling, resilience
+❌ Complexity, eventual consistency</code></pre>
+    </div>
+  </div>
+  <div class="note"><strong>Hybrid:</strong> Sync для critical paths, Async для everything else</div>
+</section>
+
+<!-- SLIDE 15 -->
+<section>
+  <span class="slide-num">15 / 40</span>
+  <h2>Service Discovery</h2>
+  <p><strong>Проблема:</strong> Microservice A хоче викликати Microservice B. Де B? IP:port?</p>
+  <pre><code>Hard-coded:
+  http://payment-service:8080
+  ❌ Що якщо IP змінюється? Scale out?
+
+Service Discovery:
+  1. Payment Service registers itself
+     → Service Registry (Consul, Eureka)
+  2. Order Service asks Registry
+     "Де Payment Service?"
+  3. Registry returns: [10.0.1.5:8080, 10.0.1.6:8080]</code></pre>
+  <div class="note"><strong>Kubernetes:</strong> Built-in Service Discovery через DNS</div>
+</section>
+
+<!-- SLIDE 16 -->
+<section>
+  <span class="slide-num">16 / 40</span>
+  <h2>API Gateway Pattern</h2>
+  <pre><code>Mobile App → API Gateway → [Auth Service]
+                        ↘ [User Service]
+                        ↘ [Orders Service]
+                        ↘ [Payments Service]
+                        ↘ [Catalog Service]</code></pre>
+  <h3>API Gateway робота:</h3>
+  <ul style="font-size:0.85em;">
+    <li>✓ Єдина точка входу (Single entry point)</li>
+    <li>✓ Request aggregation (1 call замість 5)</li>
+    <li>✓ Authentication & Authorization</li>
+    <li>✓ Rate limiting</li>
+    <li>✓ Caching</li>
+  </ul>
+  <div class="note"><strong>AWS:</strong> Amazon API Gateway, ALB</div>
+</section>
+
+<!-- SLIDE 17 -->
+<section>
+  <span class="slide-num">17 / 40</span>
+  <h2>Containers — навіщо?</h2>
+  <div class="two-col">
+    <div class="box box-bad">
+      <h4>Проблема традиційного deployment</h4>
+      <pre><code>Dev: "It works on my machine!"
+Ops: "But not on production..."
+
+Причини:
+- Different OS versions
+- Different library versions
+- Missing dependencies</code></pre>
+    </div>
+    <div class="box box-good">
+      <h4>Container = рішення</h4>
+      <pre><code>📦 Container =
+   application + all dependencies
+
+✓ Same environment (dev, test, prod)
+✓ Portable (laptop → AWS → Azure)
+✓ Isolated (не конфліктує)
+✓ Lightweight (vs VM)</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 18 -->
+<section>
+  <span class="slide-num">18 / 40</span>
+  <h2>VM vs Container</h2>
+  <pre style="font-size:0.48em;"><code>VIRTUAL MACHINES:              CONTAINERS:
+┌──────────────────────┐       ┌────────────────────────┐
+│ App A  │  App B      │       │ App A │ App B │ App C  │
+├────────┴────────┤    │       ├────────┴───────┴────────┤
+│ Guest │ Guest  │     │       │ Container Runtime      │
+│  OS   │   OS   │     │       │      (Docker)          │
+├────────┴────────┤    │       ├────────────────────────┤
+│   Hypervisor    │    │       │      Host OS           │
+├─────────────────┤    │       ├────────────────────────┤
+│    Host OS      │    │       │      Hardware          │
+├─────────────────┤    │       └────────────────────────┘
+│    Hardware     │    │
+└──────────────────────┘</code></pre>
+  <table style="margin-top:0.5em;">
+    <tr><th></th><th>VM</th><th>Container</th></tr>
+    <tr><td><strong>Size</strong></td><td>GBs</td><td>MBs</td></tr>
+    <tr><td><strong>Startup</strong></td><td>Minutes</td><td>Seconds</td></tr>
+    <tr><td><strong>Isolation</strong></td><td>Strong (separate kernel)</td><td>Process-level (shared kernel)</td></tr>
+    <tr><td><strong>Resource</strong></td><td>More overhead</td><td>Minimal overhead</td></tr>
+  </table>
+</section>
+
+<!-- SLIDE 19 -->
+<section>
+  <span class="slide-num">19 / 40</span>
+  <h2>Container Anatomy</h2>
+  <h3>Як працює контейнер (Linux):</h3>
+  <pre><code>1. NAMESPACES (ізоляція)
+   PID: процеси
+   NET: network interfaces
+   MNT: filesystem mounts
+   UTS: hostname
+   IPC: inter-process communication
+
+2. CGROUPS (resource limits)
+   CPU: max 1 core
+   Memory: max 512MB
+   Disk I/O: limits
+
+3. UNION FILESYSTEM (layers)
+   Read-only image layers
+   + Writable container layer</code></pre>
+  <div class="note"><strong>Контейнер ≠ VM.</strong> Контейнер = ізольований процес на host OS.</div>
+</section>
+
+<!-- SLIDE 20 -->
+<section>
+  <span class="slide-num">20 / 40</span>
+  <h2>Container Image</h2>
+  <p><strong>Що це?</strong> Read-only template для створення контейнера.</p>
+  <pre><code>IMAGE LAYERS (immutable):
+┌──────────────────────┐
+│ App code (5MB)       │ ← Layer 4
+├──────────────────────┤
+│ Dependencies (50MB)  │ ← Layer 3
+├──────────────────────┤
+│ Runtime (100MB)      │ ← Layer 2
+├──────────────────────┤
+│ Base OS (20MB)       │ ← Layer 1
+└──────────────────────┘
+
+CONTAINER = Image + Writable layer</code></pre>
+  <h3>Image Registry:</h3>
+  <ul style="font-size:0.85em;">
+    <li>Docker Hub (public)</li>
+    <li>AWS ECR (Elastic Container Registry)</li>
+    <li>Google GCR, Azure ACR</li>
+  </ul>
+</section>
+
+<!-- SLIDE 21 -->
+<section>
+  <span class="slide-num">21 / 40</span>
+  <h2>Container Lifecycle</h2>
+  <pre><code>1. BUILD
+   Dockerfile → docker build → Image
+
+2. SHIP
+   docker push → Registry (ECR, Docker Hub)
+
+3. RUN
+   docker run → Container (running process)
+
+4. STOP
+   docker stop → Graceful shutdown (SIGTERM)
+
+5. REMOVE
+   docker rm → Delete container
+   docker rmi → Delete image</code></pre>
+  <div class="note"><strong>Immutability:</strong> Never update running container. Build new image → deploy new container.</div>
+</section>
+
+<!-- SLIDE 22 -->
+<section>
+  <span class="slide-num">22 / 40</span>
+  <h2>Container Best Practices</h2>
+  <div class="two-col" style="font-size:0.80em;">
+    <div>
+      <pre><code>✓ Small Images
+  Use alpine base (5MB vs 100MB)
+  Multi-stage builds
+
+✓ One Process per Container
+  Container = single concern
+
+✓ Non-root User
+  Security: USER node (not root)
+
+✓ Health Checks
+  HEALTHCHECK in Dockerfile</code></pre>
+    </div>
+    <div>
+      <pre><code>✓ Explicit Versions
+  FROM node:20-alpine (not latest)
+
+✓ .dockerignore
+  Exclude node_modules/, .git/
+
+✗ Don't store data in container
+  Use volumes for persistence</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 23 -->
+<section>
+  <span class="slide-num">23 / 40</span>
+  <h2>Docker — що це?</h2>
+  <p><strong>Docker Platform = tools для роботи з контейнерами</strong></p>
+  <pre><code>DOCKER ARCHITECTURE:
+
+┌─────────────────────────────────┐
+│        Docker Client            │
+│   (docker build, run, push)     │
+└────────────┬────────────────────┘
+             │ REST API
+┌────────────▼────────────────────┐
+│       Docker Daemon             │
+│  (dockerd - manages containers) │
+├─────────────────────────────────┤
+│   Images │ Containers │ Networks│
+└─────────────────────────────────┘
+             │
+┌────────────▼────────────────────┐
+│    Container Runtime            │
+│   (containerd → runc)           │
+└─────────────────────────────────┘</code></pre>
+  <p style="font-size:0.80em;"><strong>Docker ≠ тільки спосіб запуску контейнерів.</strong> Alternatives: Podman, containerd (used by K8s)</p>
+</section>
+
+<!-- SLIDE 24 -->
+<section>
+  <span class="slide-num">24 / 40</span>
+  <h2>Dockerfile</h2>
+  <p><strong>Dockerfile = інструкції для побудови image</strong></p>
+  <pre><code class="dockerfile"># Base image
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy application code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Switch to non-root user
+USER node
+
+# Start command
+CMD ["node", "server.js"]</code></pre>
+  <p style="font-size:0.75em;"><strong>Основні інструкції:</strong> FROM, WORKDIR, COPY, RUN, EXPOSE, USER, CMD, ENTRYPOINT</p>
+</section>
+
+<!-- SLIDE 25 -->
+<section>
+  <span class="slide-num">25 / 40</span>
+  <h2>Docker Image Layers</h2>
+  <p><strong>Layer Caching для швидкої збірки:</strong></p>
+  <pre><code>Step 1: FROM node:20-alpine
+  → Layer 1 (cached if exists)
+
+Step 2: WORKDIR /app
+  → Layer 2 (cached)
+
+Step 3: COPY package*.json ./
+  → Layer 3 (cached if files unchanged)
+
+Step 4: RUN npm ci
+  → Layer 4 (cached if package.json unchanged) ← ЕКОНОМІЯ!
+
+Step 5: COPY . .
+  → Layer 5 (rebuild if code changed)</code></pre>
+  <div class="note"><strong>Optimization:</strong> Copy dependencies BEFORE code → reuse npm install layer</div>
+</section>
+
+<!-- SLIDE 26 -->
+<section>
+  <span class="slide-num">26 / 40</span>
+  <h2>Docker Networking</h2>
+  <h3>Network Types:</h3>
+  <div class="two-col" style="font-size:0.78em;">
+    <div>
+      <pre><code>1. BRIDGE (default)
+   Isolated network
+   docker run → automatically
+
+2. HOST
+   Container uses host network
+   Performance++, Security--</code></pre>
+    </div>
+    <div>
+      <pre><code>3. OVERLAY
+   Multi-host networking
+   (Docker Swarm, K8s)
+
+4. NONE
+   No networking</code></pre>
+    </div>
+  </div>
+  <h3>Port Mapping:</h3>
+  <pre><code>docker run -p 8080:3000 myapp
+  Host:8080 → Container:3000</code></pre>
+</section>
+
+<!-- SLIDE 27 -->
+<section>
+  <span class="slide-num">27 / 40</span>
+  <h2>Docker Volumes</h2>
+  <p><strong>Problem:</strong> Container filesystem ephemeral (втрачається при видаленні)</p>
+  <p><strong>Solution: Volumes</strong> (persistent storage)</p>
+  <pre><code>Types:
+
+1. NAMED VOLUME
+   docker volume create mydata
+   docker run -v mydata:/app/data myapp
+   → Managed by Docker
+
+2. BIND MOUNT
+   docker run -v /host/path:/container/path myapp
+   → Direct host filesystem access
+
+3. TMPFS (in-memory)
+   For temporary data</code></pre>
+  <div class="note"><strong>Use cases:</strong> Databases (PostgreSQL data), Shared data between containers</div>
+</section>
+
+<!-- SLIDE 28 -->
+<section>
+  <span class="slide-num">28 / 40</span>
+  <h2>Kubernetes — навіщо?</h2>
+  <h3>Проблеми з простим Docker:</h3>
+  <pre><code>❌ Де запускати 100 containers?
+❌ Як розподілити по серверах?
+❌ Що якщо container crashes?
+❌ Як масштабувати (add/remove containers)?
+❌ Як оновити без downtime?
+❌ Як балансувати трафік?</code></pre>
+  <h3>Kubernetes (K8s) = Container Orchestration Platform</h3>
+  <p style="font-size:0.85em;">Автоматизує: Deployment, Scaling, Self-healing, Load balancing, Rolling updates, Service discovery</p>
+</section>
+
+<!-- SLIDE 29 -->
+<section>
+  <span class="slide-num">29 / 40</span>
+  <h2>K8s Architecture</h2>
+  <pre style="font-size:0.45em;"><code>CONTROL PLANE (master):
+┌───────────────────────────────────┐
+│ API Server (kubectl → API)        │
+│ Scheduler (де запустити pod?)     │
+│ Controller Manager (desired state)│
+│ etcd (cluster state DB)           │
+└───────────────────────────────────┘
+              ↓ manages
+┌─────────────────────────────────────┐
+│        WORKER NODES                 │
+│  ┌────────────────────────────┐    │
+│  │ Node 1                      │    │
+│  │ - kubelet (agent)           │    │
+│  │ - kube-proxy (networking)   │    │
+│  │ - Container Runtime (Docker)│    │
+│  │ - Pods (containers)         │    │
+│  └────────────────────────────┘    │
+│  ┌────────────────────────────┐    │
+│  │ Node 2, Node 3...           │    │
+│  └────────────────────────────┘    │
+└─────────────────────────────────────┘</code></pre>
+  <div class="note"><strong>Managed K8s:</strong> AWS EKS, GKE, AKS → Control Plane керується cloud provider</div>
+</section>
+
+<!-- SLIDE 30 -->
+<section>
+  <span class="slide-num">30 / 40</span>
+  <h2>K8s Основні Об'єкти</h2>
+  <table>
+    <tr><th>Об'єкт</th><th>Що це</th><th>Приклад</th></tr>
+    <tr><td><strong>Pod</strong></td><td>Найменша одиниця. 1+ контейнерів</td><td>Web container + sidecar logging</td></tr>
+    <tr><td><strong>Deployment</strong></td><td>Manages Pods: replicas, rolling updates</td><td>"Запусти 3 копії nginx"</td></tr>
+    <tr><td><strong>Service</strong></td><td>Stable network endpoint для Pods</td><td>ClusterIP: internal</td></tr>
+    <tr><td><strong>ConfigMap</strong></td><td>Configuration (non-sensitive)</td><td>API_URL=https://api.example.com</td></tr>
+    <tr><td><strong>Secret</strong></td><td>Sensitive data (base64)</td><td>DB_PASSWORD=secret123</td></tr>
+    <tr><td><strong>Ingress</strong></td><td>HTTP routing (domain → service)</td><td>api.example.com → api-service</td></tr>
+  </table>
+</section>
+
+<!-- SLIDE 31 -->
+<section>
+  <span class="slide-num">31 / 40</span>
+  <h2>Pod Lifecycle</h2>
+  <div class="two-col">
+    <div>
+      <pre><code>Pod States:
+
+Pending
+  ↓ (Scheduler assigns node)
+Running
+  ↓ (Container exits)
+Succeeded (exit 0)
+or
+Failed (exit ≠ 0)
+
+Restart Policies:
+- Always (default)
+- OnFailure (Jobs)
+- Never</code></pre>
+    </div>
+    <div>
+      <pre><code class="yaml">apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.25
+    ports:
+    - containerPort: 80</code></pre>
+    </div>
+  </div>
+  <div class="note"><strong>Pod = ephemeral.</strong> Не покладайся на конкретний Pod. Service абстрагує.</div>
+</section>
+
+<!-- SLIDE 32 -->
+<section>
+  <span class="slide-num">32 / 40</span>
+  <h2>Service Types</h2>
+  <pre><code>1. ClusterIP (default)
+   Internal-only access
+   my-service.default.svc.cluster.local
+
+2. NodePort
+   Exposes on each Node's IP:port
+   &lt;NodeIP&gt;:30080
+
+3. LoadBalancer
+   Cloud provider's LB (AWS ELB)
+   External IP for internet access
+
+4. Ingress (not a Service type, but related)
+   HTTP routing rules
+   api.example.com → api-service:80
+   web.example.com → web-service:3000</code></pre>
+  <div class="note"><strong>Typical:</strong> Ingress (external) → Service (internal) → Pods</div>
+</section>
+
+<!-- SLIDE 33 -->
+<section>
+  <span class="slide-num">33 / 40</span>
+  <h2>K8s Scaling & Healing</h2>
+  <h3>Horizontal Pod Autoscaler (HPA):</h3>
+  <pre><code class="yaml">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-hpa
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: web-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70</code></pre>
+  <p style="font-size:0.80em;"><strong>Self-healing:</strong> Container crashes → restart | Pod crashes → recreate | Node fails → reschedule</p>
+</section>
+
+<!-- SLIDE 34 -->
+<section>
+  <span class="slide-num">34 / 40</span>
+  <h2>Event-driven — Концепція</h2>
+  <p><strong>Event-driven Architecture (EDA):</strong> Система реагує на <strong>події (events)</strong> замість direct calls.</p>
+  <div class="two-col">
+    <div class="box box-bad">
+      <h4>Traditional (Sync)</h4>
+      <pre><code>Service A → calls → Service B
+(tight coupling,
+ Service A blocks)</code></pre>
+    </div>
+    <div class="box box-good">
+      <h4>Event-driven (Async)</h4>
+      <pre><code>Service A → Event → Event Bus
+Service B, C, D → subscribe
+(loose coupling,
+ non-blocking)</code></pre>
+    </div>
+  </div>
+  <p style="font-size:0.85em;"><strong>Event = immutable fact:</strong> OrderPlaced, PaymentProcessed, UserRegistered</p>
+  <div class="note"><strong>Компоненти:</strong> Producer, Event Bus (SQS, SNS, Kafka, EventBridge), Consumer</div>
+</section>
+
+<!-- SLIDE 35 -->
+<section>
+  <span class="slide-num">35 / 40</span>
+  <h2>Event-driven Patterns</h2>
+  <h3>1. Pub/Sub (Publish/Subscribe):</h3>
+  <pre><code>Publisher → Topic → Subscriber 1, 2, 3
+AWS: SNS → SQS (fanout)</code></pre>
+  <h3>2. Event Sourcing:</h3>
+  <pre><code>Store events (не final state)
+OrderPlaced → PaymentReceived → OrderShipped
+Replay events → reconstruct state</code></pre>
+  <h3>3. CQRS (Command Query Responsibility Segregation):</h3>
+  <pre><code>Write Model (commands) ≠ Read Model (queries)
+Event → update both</code></pre>
+  <div class="note"><strong>AWS приклади:</strong> S3 Event Notifications → Lambda, DynamoDB Streams → Lambda, EventBridge rules</div>
+</section>
+
+<!-- SLIDE 36 -->
+<section>
+  <span class="slide-num">36 / 40</span>
+  <h2>Переваги та Виклики Event-driven</h2>
+  <div class="two-col">
+    <div class="box box-good">
+      <h4>Переваги:</h4>
+      <pre><code>✅ Loose Coupling
+   Producer не знає про consumers
+
+✅ Scalability
+   Add consumers без зміни producer
+
+✅ Resilience
+   Queue buffering → retry
+
+✅ Asynchronous
+   Non-blocking, better perf</code></pre>
+    </div>
+    <div class="box box-bad">
+      <h4>Виклики:</h4>
+      <pre><code>❌ Eventual Consistency
+   Data not immediately consistent
+
+❌ Complexity
+   Distributed debugging складне
+
+❌ Message Ordering
+   Не гарантується
+
+❌ Duplicate Messages
+   At-least-once delivery</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 37 -->
+<section>
+  <span class="slide-num">37 / 40</span>
+  <h2>AWS ECS (Elastic Container Service)</h2>
+  <p><strong>Managed container orchestration від AWS</strong></p>
+  <pre><code>ECS Components:
+
+1. CLUSTER
+   Logical group of EC2 or Fargate resources
+
+2. TASK DEFINITION
+   Blueprint: which image, CPU, memory, env vars
+   (like Dockerfile for ECS)
+
+3. SERVICE
+   Runs & maintains N tasks (like K8s Deployment)
+
+4. TASK
+   Running instance of Task Definition (like Pod)</code></pre>
+  <h3>Launch Types:</h3>
+  <ul style="font-size:0.85em;">
+    <li><strong>EC2:</strong> You manage instances (more control, cheaper)</li>
+    <li><strong>Fargate:</strong> Serverless (AWS manages, easier, pricier)</li>
+  </ul>
+  <div class="note"><strong>Integration:</strong> ALB, CloudWatch, ECR, IAM roles</div>
+</section>
+
+<!-- SLIDE 38 -->
+<section>
+  <span class="slide-num">38 / 40</span>
+  <h2>AWS EKS (Elastic Kubernetes Service)</h2>
+  <p><strong>Managed Kubernetes на AWS</strong></p>
+  <pre><code>EKS = K8s Control Plane (managed by AWS)
+    + Worker Nodes (EC2 or Fargate)
+
+Переваги:
+✅ Standard Kubernetes (portable)
+✅ CNCF ecosystem (Helm, Prometheus, etc.)
+✅ No vendor lock-in
+✅ Multi-cloud experience
+
+Integration:
+- VPC networking
+- IAM for RBAC
+- ALB Ingress Controller
+- EBS/EFS for storage</code></pre>
+  <div class="note">
+    <strong>ECS vs EKS:</strong> ECS = Simple, AWS-specific | EKS = Complex, portable, K8s ecosystem
+  </div>
+</section>
+
+<!-- SLIDE 39 -->
+<section>
+  <span class="slide-num">39 / 40</span>
+  <h2>AWS Lambda</h2>
+  <p><strong>Serverless Compute — Function as a Service (FaaS)</strong></p>
+  <pre><code>Lambda = code без серверів
+
+Trigger → Lambda Function → Result
+         (your code)
+
+Triggers:
+- API Gateway (HTTP requests)
+- S3 events (file upload)
+- DynamoDB Streams (DB changes)
+- SQS, SNS, EventBridge
+- CloudWatch Events (schedule)</code></pre>
+  <h3>Limitations:</h3>
+  <ul style="font-size:0.85em;">
+    <li>Max runtime: 15 min</li>
+    <li>Max memory: 10 GB</li>
+    <li>Cold start: 100-500ms (or use Provisioned Concurrency)</li>
+  </ul>
+  <div class="note"><strong>Pricing:</strong> Pay per invocation + duration (ms) | <strong>Use cases:</strong> Event processing, ETL, APIs</div>
+</section>
+
+<!-- SLIDE 40 -->
+<section>
+  <span class="slide-num">40 / 40</span>
+  <h2>Ключові Висновки</h2>
+  <div class="two-col" style="font-size:0.80em;">
+    <ol>
+      <li><strong>Cloud-native</strong> = Microservices + Containers + Orchestration<br>12-Factor App, API-first, Observability</li>
+      <li><strong>Microservices</strong><br>Independent deployment, tech diversity<br>Trade-off: complexity vs scalability</li>
+      <li><strong>Containers > VMs</strong><br>Lightweight, portable, fast<br>Docker = standard</li>
+    </ol>
+    <ol start="4">
+      <li><strong>Orchestration</strong><br>Kubernetes (EKS) = powerful, portable<br>ECS = simple, AWS-specific</li>
+      <li><strong>Event-driven</strong><br>Async, decoupled, scalable<br>SQS, SNS, EventBridge, Lambda</li>
+      <li><strong>Serverless (Lambda)</strong><br>No infrastructure management<br>Pay-per-use, fast iteration</li>
+    </ol>
+  </div>
+  <hr style="border-color:#555; margin:0.8em auto; width:50%;"/>
+  <p style="text-align:center; color:var(--muted); font-size:0.7em;">
+    Лекція 9 · Хмарні технології інформаційних систем · Бакалавр ІТ · 3 курс
+  </p>
+  <div class="note"><strong>Наступна лекція:</strong> Моніторинг та Observability (Metrics, Logs, Traces)</div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<!-- Reveal.js scripts -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: false,   // custom slide numbers used
+    transition: 'slide',
+    transitionSpeed: 'fast',
+    controls: true,
+    progress: true,
+    center: false,
+    width: 1750,
+    height: 1080,
+    margin: 0.04,
+    plugins: [RevealHighlight, RevealNotes]
+  });
+</script>
+</body>
+</html>
